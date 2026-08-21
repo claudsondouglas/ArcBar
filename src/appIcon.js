@@ -52,6 +52,20 @@ function lookupById(id) {
 }
 
 /**
+ * O `Shell.App` **instalado** de um id de `.desktop`, ou null.
+ *
+ * A porta de entrada de quem já TEM o id e só quer saber se ele existe — o
+ * nome de escopo do systemd, em src/backgroundApps.js. O filtro é o mesmo do
+ * resto do arquivo: um app sem `.desktop` não conta.
+ *
+ * @param {string} id
+ * @returns {Shell.App?}
+ */
+export function appForDesktopId(id) {
+    return lookupById(id);
+}
+
+/**
  * O app instalado que corresponde a uma `WM_CLASS`. São as mesmas três tabelas
  * que o Shell usa para casar janela com `.desktop`: a `WMClass` declarada, a
  * `StartupWMClass`, e por fim o chute pelo nome do arquivo.
@@ -109,6 +123,45 @@ export function appForSource(source) {
 }
 
 /**
+ * A textura do tema para um app instalado, ou null.
+ *
+ * O `icon-size` vai inline, e não só no `icon_size` do construtor: o
+ * `icon-size` do CSS do tema venceria a propriedade e devolveria o ícone a um
+ * tamanho que não é o desta lista.
+ */
+function iconTexture(app, size, styleClass) {
+    const texture = app?.create_icon_texture?.(size) ?? null;
+    if (!texture)
+        return null;
+
+    texture.add_style_class_name(styleClass);
+    texture.set_style?.(`icon-size: ${size}px;`);
+    texture.y_align = Clutter.ActorAlign.CENTER;
+    return texture;
+}
+
+/**
+ * Um actor de ícone para um `Shell.App` que já foi resolvido.
+ *
+ * Sem a cascata das outras duas funções daqui: quem chama isto partiu de um
+ * `.desktop` que existe, então ou o tema tem o ícone dele ou não há segunda
+ * pista nenhuma a seguir.
+ *
+ * @param {Shell.App} app
+ * @param {number} size
+ * @param {string} styleClass
+ * @returns {Clutter.Actor}
+ */
+export function createAppIcon(app, size, styleClass) {
+    return iconTexture(app, size, styleClass) ?? new St.Icon({
+        style_class: styleClass,
+        icon_name: APP_FALLBACK_ICON,
+        icon_size: size,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+}
+
+/**
  * Um actor de ícone para a fonte, no tamanho pedido.
  *
  * Com app instalado é `create_icon_texture()`, o mesmo que o ArcDock chama.
@@ -118,7 +171,7 @@ export function appForSource(source) {
  */
 export function createSourceIcon(source, size, styleClass, fallbackIconName) {
     const app = appForSource(source);
-    const texture = app?.create_icon_texture?.(size) ?? null;
+    const texture = iconTexture(app, size, styleClass);
 
     debug(`source="${source?.title}" own=${(source?.app ?? source?._app)?.id} ` +
         `windowBacked=${(source?.app ?? source?._app)?.is_window_backed?.()} ` +
@@ -126,15 +179,8 @@ export function createSourceIcon(source, size, styleClass, fallbackIconName) {
         `resolved=${app?.id} gicon=${source?.icon?.to_string?.()} ` +
         `names=[${iconNamesOf(source)}]`);
 
-    if (texture) {
-        texture.add_style_class_name(styleClass);
-        // Inline, e não só o `icon_size` do construtor: o `icon-size` do CSS
-        // do tema venceria a propriedade e devolveria o ícone a um tamanho
-        // que não é o desta lista.
-        texture.set_style?.(`icon-size: ${size}px;`);
-        texture.y_align = Clutter.ActorAlign.CENTER;
+    if (texture)
         return texture;
-    }
 
     const icon = new St.Icon({
         style_class: styleClass,
@@ -219,19 +265,13 @@ export function appForStream(stream) {
  */
 export function createStreamIcon(stream, size, styleClass) {
     const app = appForStream(stream);
-    const texture = app?.create_icon_texture?.(size) ?? null;
+    const texture = iconTexture(app, size, styleClass);
 
     debug(`stream="${stream?.get_name()}" appId=${stream?.get_application_id()} ` +
         `resolved=${app?.id} iconName=${stream?.get_icon_name()}`);
 
-    if (texture) {
-        texture.add_style_class_name(styleClass);
-        // Inline pelo mesmo motivo de createSourceIcon(): o `icon-size` do
-        // tema venceria a propriedade do construtor.
-        texture.set_style?.(`icon-size: ${size}px;`);
-        texture.y_align = Clutter.ActorAlign.CENTER;
+    if (texture)
         return texture;
-    }
 
     const icon = new St.Icon({
         style_class: styleClass,

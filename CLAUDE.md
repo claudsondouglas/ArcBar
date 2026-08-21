@@ -30,7 +30,10 @@ src/
 ├── clock.js             — ArcBarClock: right-hand label, fixed `Qui 20 de Ago 14:44`.
 ├── systemUsage.js       — SystemUsage: CPU and memory percentages, sampled from /proc.
 ├── systemStat.js        — ArcBarSystemStat: one measure (icon + percentage).
-├── systemMonitor.js     — ArcBarSystemMonitor: the two stats, alone on the left.
+├── systemMonitor.js     — ArcBarSystemMonitor: the two stats, at the far left.
+├── backgroundApps.js    — BackgroundAppsModel: systemd's app scopes minus the ones with windows.
+├── backgroundAppIcon.js — ArcBarBackgroundAppIcon: one background app's icon, click to raise it.
+├── backgroundAppsIndicator.js — ArcBarBackgroundApps: the row of them, right of the stats.
 ├── glassEffect.js       — applyGlass(): Shell.BlurEffect in BACKGROUND mode.
 ├── glassMenu.js         — applyGlassMenu(): turns a PopupMenu into that glass surface.
 ├── notifications.js     — NotificationsModel: reads Main.messageTray, dismisses, clears.
@@ -145,6 +148,50 @@ the same reason: an unknown `icon_name` is not an empty space, it is the broken-
 monitor icons are exactly the ones that vary from theme to theme — hence a list per measure rather
 than one name.
 
+### Background apps
+
+Right of the two percentages, one icon per app that is **running with no window** — the app that
+was closed to a tray that GNOME does not draw. Clicking one brings it back.
+
+The obvious source is the wrong one. `org.freedesktop.background.Monitor`, the portal interface
+behind GNOME's own "Background Apps" menu, builds its list from what an app *declared* through
+`org.freedesktop.portal.Background.SetStatus`, so only a sandboxed app that bothers to call it ever
+appears. On this machine, with Discord closed to the tray for an hour, it answers `[]`.
+
+What does know is **systemd**. Every app the shell launches gets a scope in the user manager's
+`app.slice` — `app-gnome-discord-5876.scope` — and that scope outlives windows, tray icons and
+portals; it dies with the app's last process. `ListUnitsByPatterns(['active'], ['app-*.scope'])` on
+the session bus is therefore the list of apps that are alive, and intersecting it with
+`get_n_windows() === 0` is the whole definition of "in the background". Minimised is not
+background: a minimised window is still a window.
+
+Two things follow from the two halves having different costs. The scopes are re-listed only when
+systemd says a unit was born or died — which needs a `Subscribe()` first, or the manager never
+emits `UnitNew`/`UnitRemoved` at all — while the window filter is redone from scratch on every
+`tracked-windows-changed`, because that one is local and free. Both go through one idle, for the
+same reason the notification list does: opening an app fires the scope's `UnitNew` and several
+window changes in a row, and each of them would rebuild the icon row in the middle of the last.
+
+Turning a unit name into a `.desktop` id is a guess that is never guessed. The grammar is
+`app-[launcher-]<escaped id>-<pid>.scope`, and neither half has a delimiter of its own — `gnome` is
+a launcher in `app-gnome-discord-…` and part of the id in `gnome-terminal`. So
+`desktopIdsFromUnit()` drops the trailing pid, unescapes systemd's `\xNN`, and returns *both*
+readings; `appForDesktopId()` decides which one exists. That is what resolves
+`app-gnome-brave\x2dbrowser-6488.scope` to `brave-browser.desktop`, and what silently drops
+`app-org.chromium.Chromium-6496.scope` — a Brave child process whose scope names no installed app.
+An app with two scopes (the launcher's and the nested one, as Discord has) collapses into one icon
+because the map is keyed by the resolved app.
+
+`should_show()` is the line between an app and a session daemon: both get scopes, but the daemon's
+`.desktop` is `NoDisplay=true` and nobody "left it open".
+
+Clicking calls `Shell.App.activate()`, which with no windows is the same launch the app grid does —
+a single-instance app shows the window it already had instead of opening a second. The icon then
+removes itself, because that new window reaches the model through `tracked-windows-changed`.
+
+With nothing in the background the whole widget leaves the bar: the actor is a direct child of
+`_leftBox`, and a box skips an invisible child along with the `spacing` that would come with it.
+
 ### The clock, and where things sit
 
 Left to right: CPU and memory on the far left, notifications in the middle, then clock, network,
@@ -164,8 +211,11 @@ are bare labels and icons, it is the **`spacing` of the panel box**: a box skips
 and the space that would come with it, which is exactly what is needed while the takeover keeps
 GNOME's own indicators hidden inside those same boxes. On the right, where the three items are
 buttons with a click target of their own, `spacing` is zero and the 8px is measured between the
-**highlights** — see *Hit targets*. The only 4px left is inside a measure, between its icon and its
-percentage: those two are one thing, and spacing them like CPU is spaced from memory would break the
+**highlights** — see *Hit targets*. The background-app icons are the exception on that side: they are buttons with a
+highlight, so they follow the right-hand rule instead — `spacing: 0` and 4px of transparent border,
+which puts 8px between two highlights and 12px between the memory percentage and the first one. The
+extra 4px is welcome there: a number and an app icon are not the same kind of thing. The only 4px
+left is inside a measure, between its icon and its percentage: those two are one thing, and spacing them like CPU is spaced from memory would break the
 two pairs into four loose items. Distances to the screen edges are padding (`.arcbar-system-monitor`
 on the left, `#panelRight` on the right).
 

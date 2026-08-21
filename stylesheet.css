@@ -1542,11 +1542,62 @@
   font-weight: bold;
 }
 
+#panel.arcbar-panel .arcbar-storage-button {
+  -natural-hpadding: 0;
+  -minimum-hpadding: 0;
+}
+
+#panel.arcbar-panel .arcbar-storage-indicator {
+  padding: 0;
+}
+
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-storage-button .arcbar-system-stat-icon,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-storage-button .arcbar-system-stat-value {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* Os apps que continuam rodando sem janela, logo depois das medidas.
+
+   `spacing: 0` e uma borda transparente de 4px em cada ícone, como no canto
+   direito da barra: o que se vê é o realce, e duas bordas vizinhas põem
+   4 + 4 = os mesmos 8px entre dois realces. O vão até a porcentagem de
+   memória sai 12px (os 8px do #panelLeft mais a borda do primeiro ícone), e
+   é de propósito que ele seja maior: um número e um ícone de app não são a
+   mesma espécie de coisa, e a folga é o que separa os dois grupos.
+
+   O realce no hover é a única diferença para o vizinho da esquerda. CPU e
+   memória também são clicáveis e não o têm — mas elas dizem o que são por
+   estarem escritas, enquanto um ícone de app na barra é indistinguível de um
+   indicador até o ponteiro passar por cima. */
+#panel.arcbar-panel .arcbar-background-apps {
+  spacing: 0;
+}
+
+#panel.arcbar-panel .arcbar-background-app {
+  border: 4px solid transparent;
+  border-radius: 10px;
+}
+
+#panel.arcbar-panel .arcbar-background-app:hover,
+#panel.arcbar-panel .arcbar-background-app:focus {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Usa a representação simbólica para que os apps em segundo plano tenham a
+   mesma silhueta branca dos demais indicadores da barra. */
+#panel.arcbar-panel .arcbar-background-app-icon {
+  icon-size: 16px;
+  -st-icon-style: symbolic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 /* Over a transparent bar the widgets sit on the wallpaper — a soft shadow
    keeps them readable on light backgrounds. */
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-clock-label,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-system-stat-icon,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-system-stat-value,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-background-app-icon,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-network-button .system-status-icon,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-volume-button .system-status-icon,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-power-button .system-status-icon {
@@ -1915,6 +1966,47 @@
   color: rgba(36, 36, 36, 0.60);
   font-size: 12px;
   padding: 10px 0 12px 0;
+}
+
+.arcbar-storage-menu {
+  width: 360px;
+}
+
+.arcbar-storage-summary {
+  color: #242424;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 8px 10px 10px 10px;
+}
+
+.arcbar-storage-list {
+  spacing: 2px;
+}
+
+.arcbar-storage-row {
+  spacing: 3px;
+  padding: 8px 10px;
+}
+
+.arcbar-storage-row-head {
+  spacing: 8px;
+}
+
+.arcbar-storage-name {
+  color: #242424;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.arcbar-storage-percent,
+.arcbar-storage-details {
+  color: rgba(36, 36, 36, 0.65);
+  font-size: 11px;
+}
+
+.arcbar-storage-path {
+  color: rgba(36, 36, 36, 0.45);
+  font-size: 10px;
 }
 
 /* ------------------------------------------------------------------

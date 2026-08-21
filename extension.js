@@ -1,11 +1,13 @@
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+import { ArcBarBackgroundApps } from './src/backgroundAppsIndicator.js';
 import { ArcBarClock } from './src/clock.js';
 import { ArcBarNetworkButton } from './src/networkButton.js';
 import { ArcBarNotificationButton } from './src/notificationButton.js';
 import { ArcBarPowerButton } from './src/powerButton.js';
 import { ArcBarSystemMonitor } from './src/systemMonitor.js';
+import { ArcBarStorageButton } from './src/storageButton.js';
 import { ArcBarVolumeButton } from './src/volumeButton.js';
 import { PanelTakeover } from './src/panelTakeover.js';
 import { PanelTransparency } from './src/panelTransparency.js';
@@ -14,6 +16,7 @@ const POWER_ROLE = 'arcbar-power';
 const NETWORK_ROLE = 'arcbar-network';
 const VOLUME_ROLE = 'arcbar-volume';
 const NOTIFICATIONS_ROLE = 'arcbar-notifications';
+const STORAGE_ROLE = 'arcbar-storage';
 
 export default class ArcBarExtension extends Extension {
     // ArcBar reuses GNOME's panel actor instead of building a separate chrome
@@ -28,6 +31,18 @@ export default class ArcBarExtension extends Extension {
             this._system = new ArcBarSystemMonitor();
             this._system._arcbar = true;
             Main.panel._leftBox.insert_child_at_index(this._system, 0);
+
+            // Depois das medidas, e no índice 1 porque o monitor acabou de
+            // tomar o 0. Sem nenhum app escondido o actor fica invisível e a
+            // box não lhe dá nem o lugar nem o espaçamento.
+            this._background = new ArcBarBackgroundApps();
+            this._background._arcbar = true;
+            Main.panel._leftBox.insert_child_at_index(this._background, 1);
+
+            this._destroyStatusButton(STORAGE_ROLE);
+            this._storage = new ArcBarStorageButton();
+            Main.panel.addToStatusArea(STORAGE_ROLE, this._storage, 1, 'left');
+            this._storage.container._arcbar = true;
 
             this._destroyStatusButton(NOTIFICATIONS_ROLE);
             this._notifications = new ArcBarNotificationButton();
@@ -100,8 +115,14 @@ export default class ArcBarExtension extends Extension {
             this._clock?.destroy();
             this._clock = null;
 
+            this._background?.destroy();
+            this._background = null;
+
             this._system?.destroy();
             this._system = null;
+
+            this._storage = null;
+            this._destroyStatusButton(STORAGE_ROLE);
 
             this._notifications = null;
             this._destroyStatusButton(NOTIFICATIONS_ROLE);

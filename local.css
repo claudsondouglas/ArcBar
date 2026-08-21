@@ -60,6 +60,21 @@
   font-weight: bold;
 }
 
+#panel.arcbar-panel .arcbar-storage-button {
+  -natural-hpadding: 0;
+  -minimum-hpadding: 0;
+}
+
+#panel.arcbar-panel .arcbar-storage-indicator {
+  padding: 0;
+}
+
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-storage-button .arcbar-system-stat-icon,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-storage-button .arcbar-system-stat-value {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
 /* Over a transparent bar the widgets sit on the wallpaper — a soft shadow
    keeps them readable on light backgrounds. */
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-clock-label,
@@ -433,6 +448,47 @@
   color: rgba(36, 36, 36, 0.60);
   font-size: 12px;
   padding: 10px 0 12px 0;
+}
+
+.arcbar-storage-menu {
+  width: 360px;
+}
+
+.arcbar-storage-summary {
+  color: #242424;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 8px 10px 10px 10px;
+}
+
+.arcbar-storage-list {
+  spacing: 2px;
+}
+
+.arcbar-storage-row {
+  spacing: 3px;
+  padding: 8px 10px;
+}
+
+.arcbar-storage-row-head {
+  spacing: 8px;
+}
+
+.arcbar-storage-name {
+  color: #242424;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.arcbar-storage-percent,
+.arcbar-storage-details {
+  color: rgba(36, 36, 36, 0.65);
+  font-size: 11px;
+}
+
+.arcbar-storage-path {
+  color: rgba(36, 36, 36, 0.45);
+  font-size: 10px;
 }
 
 /* ------------------------------------------------------------------

@@ -1,0 +1,655 @@
+/* The panel background. #panel.arcbar-panel outranks the theme's #panel rule. */
+#panel.arcbar-panel {
+  background-color: #121212;
+  box-shadow: none;
+  border: none;
+  transition-duration: 250ms;
+}
+
+/* On the desktop and in the overview there is nothing under the bar to
+   separate it from, so it gets out of the way. */
+#panel.arcbar-panel.arcbar-panel-transparent {
+  background-color: transparent;
+}
+
+/* Relógio — agora no canto direito, imediatamente antes do ícone de rede. */
+#panel.arcbar-panel .arcbar-clock {
+  /* O relógio não é botão: não tem hpadding nem borda transparente para
+     dar o vão, e com o `spacing` da caixa zerado (ver #panelRight) o realce
+     do botão de rede encostaria nele. Aqui a data é texto e os vizinhos são
+     teclas: os 24px afastam a leitura do grupo de botões, e a borda de 4px
+     do vizinho ainda soma por cima deles. */
+  padding: 0 24px 0 0;
+}
+
+#panel.arcbar-panel .arcbar-clock-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: bold;
+}
+
+/* CPU e memória, sozinhos na ponta esquerda. O tamanho da fonte é dado em px:
+   o `em` daqui é o do #panel, que o tema do usuário decide, e uma barra que
+   muda de altura conforme o tema não é uma barra.
+
+   O padding da esquerda é a distância até a borda da tela — o `spacing` da
+   caixa só separa um item do outro, não o primeiro da moldura. */
+#panel.arcbar-panel #panelLeft {
+  spacing: 8px;
+}
+
+#panel.arcbar-panel .arcbar-system-monitor {
+  padding: 0 0 0 12px;
+  spacing: 8px;
+}
+
+/* Dentro de uma medida o vão é menor de propósito: o ícone e a porcentagem
+   são uma coisa só, e afastá-los tanto quanto a CPU está da memória
+   desmancharia os dois pares em quatro itens soltos. */
+#panel.arcbar-panel .arcbar-system-stat {
+  spacing: 4px;
+}
+
+#panel.arcbar-panel .arcbar-system-stat-icon {
+  icon-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+#panel.arcbar-panel .arcbar-system-stat-value {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Over a transparent bar the widgets sit on the wallpaper — a soft shadow
+   keeps them readable on light backgrounds. */
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-clock-label,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-system-stat-icon,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-system-stat-value,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-network-button .system-status-icon,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-volume-button .system-status-icon,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-power-button .system-status-icon {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* Rede, volume e energia (direita), nessa ordem — dada pelo índice em
+   extension.js, não por CSS.
+
+   O alvo de clique dos três é QUADRADO, 40×40: a altura já é a do painel
+   (40px, do tema), e a largura é o que o hpadding decide, porque o
+   ButtonBox do panelMenu.js ignora `padding` e mede o filho +
+   2×hpadding — a borda nem entra na conta. Com o glifo de 16px,
+   (40 − 16) / 2 = 12px de cada lado fecha o quadrado. Com o hpadding
+   zerado, como estava antes, o botão tinha a largura do glifo: um alvo
+   de 16px de largura por 40 de altura, uma fresta em pé que exigia mira
+   para acertar.
+
+   Os 12px são um número do painel de 40px, não um gosto: um tema com
+   outra altura desquadra o alvo, e é o preço de a altura da barra ser do
+   tema. */
+#panel.arcbar-panel .arcbar-network-button,
+#panel.arcbar-panel .arcbar-volume-button,
+#panel.arcbar-panel .arcbar-power-button {
+  -natural-hpadding: 12px;
+  -minimum-hpadding: 12px;
+  /* O MacTahoe desenha o realce do hover DENTRO de uma borda transparente
+     de 6px (com !important), então é ela quem decide o tamanho do realce:
+     40 − 2×4 = 32×32, um quadrado concêntrico ao alvo de 40. Ela também é
+     o vão entre um realce e o do vizinho — ver o `spacing` zerado da caixa
+     da direita, mais abaixo. */
+  border-width: 4px !important;
+  /* Quadrado de cantos arredondados, e não o 9999px (círculo, num botão
+     quadrado) que o tema dá a todo `.panel-button`: o realce agora tem o
+     tamanho de uma tecla, e um disco desse tamanho por trás de um glifo de
+     16px leria como um botão de rádio ligado. */
+  border-radius: 10px;
+}
+
+/* O branco não é chapado: 0.9 nos ícones e 0.8 nos textos (ver o relógio e
+   as medidas acima). Sobre o #121212 da barra, o branco puro chapa e puxa o
+   olho para os glifos antes do conteúdo das janelas. */
+#panel.arcbar-panel .arcbar-network-button .system-status-icon,
+#panel.arcbar-panel .arcbar-volume-button .system-status-icon,
+#panel.arcbar-panel .arcbar-power-button .system-status-icon {
+  color: rgba(255, 255, 255, 0.9);
+  /* O tema põe 4px em volta de cada glifo, e essa linha virou parte da
+     conta do quadrado: o ButtonBox mede o FILHO + 2×hpadding, então com os
+     4px o filho teria 24px e o botão 48 de largura por 40 de altura. Com
+     eles zerados o filho é o glifo de 16px, e os 12px de hpadding fecham
+     os 40. */
+  padding: 0;
+}
+
+/* Os 8px de vão continuam sendo a distância que se vê, só que medida agora
+   entre os REALCES e não entre os glifos: com os botões quadrados, cada um
+   já carrega 12px de hpadding, e somar `spacing` a isso afastaria os
+   ícones em 32px — três teclas soltas na ponta da barra em vez de um
+   grupo.
+
+   Zerado, o vão entre dois realces é a borda transparente de 4px de cada
+   botão: 4 + 4 = os mesmos 8px. E o `padding-right` completa 8 até a borda
+   da tela pelo mesmo caminho (4 da borda do botão + 4 daqui) — a caixa é
+   uma St.BoxLayout comum e respeita padding, ao contrário dos botões.
+
+   Os filhos que a tomada do painel escondeu não entram na conta: o
+   BoxLayout pula o actor invisível e o espaço que viria com ele. */
+#panel.arcbar-panel #panelRight {
+  padding-right: 4px;
+  spacing: 0;
+}
+
+
+/* ------------------------------------------------------------------
+ * Menus de vidro (energia, som e notificações) — a MESMA superfície do menu
+ * de contexto da dock (o `.popup-menu-content` do MacTahoe-Light:
+ * `rgba(245, 245, 245, 0.92)`). Nada aqui inventa uma cor nova: o menu
+ * do ArcDock é o único outro menu que nasce dessa mesma barra/dock, e
+ * dois cinzas parecidos lado a lado leriam como erro, não como estilo.
+ *
+ * É a virada do vidro FUMÊ que estava aqui antes (e que o `.arctab-panel`
+ * do alternador ainda usa). Ela arrasta tudo que dependia do chão escuro:
+ * rótulo branco vira `#242424` (o mesmo do tema), o rim de três tons
+ * inverte de brilho para sombra, o realce AFUNDA em vez de acender, e as
+ * `text-shadow` somem — elas existiam para segurar texto branco quando o
+ * wallpaper atravessava um tinte de 0.32; a 0.92 quase nada atravessa, e
+ * uma sombra escura sob texto escuro só suja a linha.
+ *
+ * O blur (src/glassMenu.js) fica: a 8% de transparência ele já não é o
+ * que dá legibilidade, mas é o que impede o pouco que passa de virar
+ * cocô de pixel dentro do cinza.
+ *
+ * O BoxPointer do Shell pinta o fundo e a setinha por conta própria, num
+ * StDrawingArea que NÃO conhece border-radius nem gradiente. Por isso ele
+ * é apagado inteiro aqui (`-arrow-background-color: transparent`) e quem
+ * desenha o corpo passa a ser o `.popup-menu-content`, um StWidget de
+ * verdade. O `-arrow-rise` fica: sem a setinha desenhada ele vira só a
+ * folga entre a barra e o menu.
+ *
+ * Toda cor está escrita à mão, e vários seletores levam `!important`:
+ * não é preciosismo, é o preço de conviver com um tema de usuário. O
+ * MacTahoe-Light crava `!important` em quase toda linha de
+ * `.popup-menu-item` (hover no azul de destaque, `border-radius: 10px`),
+ * e sem responder na mesma moeda o realce do menu voltaria a ser o azul
+ * do tema por cima do vidro.
+ *
+ * `.arcbar-glass-menu` é a classe que `applyGlassMenu()` (src/glassMenu.js)
+ * põe no BoxPointer: é o vidro em si, e vale para os três menus. O que
+ * fica em `.arcbar-power-menu` / `.arcbar-volume-menu` /
+ * `.arcbar-notification-menu` é só o que cada um tem de diferente —
+ * largura e o desenho das linhas.
+ * ------------------------------------------------------------------ */
+.arcbar-glass-menu {
+  -arrow-background-color: transparent;
+  -arrow-border-color: transparent;
+  -arrow-border-width: 0;
+  -arrow-rise: 8px;
+  color: #242424;
+}
+
+/* O tema do Shell impõe `min-width: 15em` em `.popup-menu` — o menu de
+   energia tem cinco linhas curtas e não precisa de meia tela de largura.
+   Mesma especificidade (uma classe), e no St quem chega por último
+   ganha. */
+.arcbar-power-menu {
+  min-width: 180px;
+}
+
+.arcbar-glass-menu .popup-menu-content {
+  /* Precisa acompanhar MENU_RADIUS em src/glassMenu.js — é dele que sai
+     o recuo do retângulo do blur. */
+  border-radius: 20px;
+  padding: 8px;
+  /* O MacTahoe põe `margin: 4px 12px 17px 12px` aqui. Como as duas
+     BindConstraints do backdrop se penduram na alocação DESTE actor, uma
+     margem assimétrica jogaria o retângulo do blur para fora do vidro. */
+  margin: 0;
+
+  /* A cor do menu de contexto da dock, chapada e não em gradiente: o
+     gradiente vertical do fumê era o resto do highlight interno, e ele só
+     lê como refração enquanto o tinte é fraco. Num cinza quase opaco a
+     mesma variação vira mancha — um lado do menu mais sujo que o outro. */
+  background-gradient-direction: none;
+  background-color: rgba(245, 245, 245, 0.92);
+
+  /* Rim hairline de três tons, invertido: sobre vidro claro quem desenha
+     a borda é a SOMBRA, não o brilho — um fio branco aqui simplesmente
+     não existiria. Topo quase sumindo (é onde a luz bate) e base a mais
+     funda, ao contrário do fumê. O St não aceita vários box-shadow numa
+     regra só, mas aceita borda por lado, que é o que basta para fingir o
+     chanfro. */
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-left: 1px solid rgba(0, 0, 0, 0.09);
+  border-right: 1px solid rgba(0, 0, 0, 0.09);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.13);
+
+  /* SEM sombra, ao contrário do `.arctab-panel` e do menu do tema. Lá o
+     halo é necessário: o alternador flutua sozinho no meio da tela, sem
+     nenhuma borda por perto, e sem sombra pareceria recortado e colado no
+     fundo. Este menu nasce ancorado no botão da barra, logo ali acima — a
+     âncora já diz de onde ele saiu, e quem desenha o contorno é o rim
+     acima. O que a sombra fazia de fato era pintar uma faixa escura de
+     uns 15px em volta do vidro, e ela some junto. */
+  box-shadow: none;
+  color: #242424;
+}
+
+/* Actor recuado que carrega o Shell.BlurEffect. Não pinta nada: existe só
+   para o borrão ter onde morar sem vazar pelos cantos arredondados do
+   menu (BLUR_INSET, em src/glassMenu.js). */
+.arcbar-glass-menu-blur {
+  background-color: transparent;
+  /* MENU_RADIUS - BLUR_INSET (20 - 6): o canto do retângulo interno toca
+     o arco do menu sem escapar dele. */
+  border-radius: 14px;
+}
+
+/* Linhas do menu. O tema do Shell dá 9px/12px e 6px entre ícone e texto,
+   o MacTahoe aperta ainda mais (6px/8px e 4px) — pouco para uma lista de
+   quatro ações que o usuário clica com pressa, e com o ícone quase
+   encostado no rótulo. */
+.arcbar-power-menu .popup-menu-item {
+  padding: 10px 14px;
+  spacing: 12px;
+  border-radius: 12px !important;
+  background-color: transparent;
+  border: 1px solid rgba(0, 0, 0, 0);
+  box-shadow: none;
+  color: #242424 !important;
+  font-weight: 500;
+  transition-duration: 130ms !important;
+}
+
+.arcbar-power-menu .popup-menu-item StIcon,
+.arcbar-power-menu .popup-menu-item .popup-menu-icon {
+  color: rgba(36, 36, 36, 0.85);
+  icon-size: 16px;
+}
+
+/* Realce por LUMINOSIDADE, não pelo azul de destaque: no ArcTab o anel
+   azul marca uma seleção que o usuário move com o Tab e precisa achar de
+   relance; aqui o destaque acompanha o ponteiro numa lista de quatro
+   linhas, e uma cor forte a cada passada do mouse viraria pisca-pisca.
+   Sobre o vidro claro o véu é ESCURO e a linha AFUNDA — a direção do
+   realce segue o chão, não o gosto: o mesmo véu branco que acendia a
+   linha sobre o fumê aqui só lavaria o rótulo escuro que ele deveria
+   destacar. A borda transparente acima reserva o espaço do rim para o
+   texto não dar um pulinho de 1px ao entrar no estado. */
+.arcbar-power-menu .popup-menu-item:hover,
+.arcbar-power-menu .popup-menu-item:focus,
+.arcbar-power-menu .popup-menu-item:selected {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: #242424 !important;
+  transition-duration: 130ms !important;
+}
+
+.arcbar-power-menu .popup-menu-item:active,
+.arcbar-power-menu .popup-menu-item.selected:active {
+  background-color: rgba(0, 0, 0, 0.14) !important;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  color: #242424 !important;
+}
+
+.arcbar-power-menu .popup-menu-item:insensitive {
+  background-color: transparent !important;
+  color: rgba(36, 36, 36, 0.45) !important;
+}
+
+/* O separador está no VIDRO e não num menu: ele descola "Reiniciar sessão"
+   das ações de máquina no menu de energia e o sistema dos apps no de som,
+   e não havia razão para os dois desenharem fios diferentes. A margem faz
+   mais do trabalho que o fio, então ele pode ser bem discreto — e escuro,
+   como o rim: sobre o vidro claro um fio branco não separaria nada. */
+.arcbar-glass-menu .popup-separator-menu-item {
+  padding: 0;
+  margin: 6px 8px;
+}
+
+.arcbar-glass-menu .popup-separator-menu-item .popup-separator-menu-item-separator {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+/* ------------------------------------------------------------------
+ * Menu de som — o vidro vem de `.arcbar-glass-menu`; daqui para baixo é
+ * só a linha e o slider.
+ *
+ * A linha é a de notificação com um slider no lugar do corpo: ícone à
+ * esquerda, nome forte, o dado apagado à direita. A porcentagem ocupa
+ * exatamente a coluna da hora de lá, e pela mesma razão — é o número que
+ * se confere de relance, não o que se lê.
+ *
+ * O slider precisa ser reescrito inteiro: o `.slider` do MacTahoe-Light
+ * foi desenhado para as configurações rápidas do Shell, que são ESCURAS
+ * (trilho branco a 10%, parte ativa branca, punho transparente até o
+ * hover). Sobre este vidro claro isso é branco no branco — o slider
+ * simplesmente sumiria, e o punho só apareceria quando o ponteiro já
+ * estivesse em cima dele.
+ * ------------------------------------------------------------------ */
+.arcbar-volume-menu {
+  /* Largura fixa pelo mesmo motivo da lista de notificações: o nome do app
+     é cortado por reticências, então sem um limite o app de nome mais
+     comprido mandaria na largura do menu. Mais estreito que aquele — aqui
+     cada linha tem um nome curto e um número, não duas frases. */
+  width: 320px;
+}
+
+.arcbar-volume-section-title {
+  color: rgba(36, 36, 36, 0.65);
+  font-weight: bold;
+  font-size: 12px;
+  padding: 2px 8px 6px 8px;
+}
+
+.arcbar-volume-list {
+  spacing: 2px;
+}
+
+.arcbar-volume-row {
+  padding: 6px 8px;
+  spacing: 10px;
+}
+
+.arcbar-volume-row-body {
+  spacing: 2px;
+}
+
+.arcbar-volume-row-head {
+  spacing: 8px;
+  padding: 0 2px;
+}
+
+.arcbar-volume-row-title {
+  color: #242424 !important;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.arcbar-volume-row-percent {
+  color: rgba(36, 36, 36, 0.55);
+  font-size: 11px;
+}
+
+/* O ícone é botão (muda e desmuta), então precisa dizer que é clicável —
+   mesmo véu escuro das linhas dos outros menus, só que redondo, porque o
+   alvo é um ícone e não uma faixa.
+
+   O tamanho é FIXO, e não o que o ícone pedir: o glifo do sistema é
+   simbólico e o do app é a arte colorida do tema, dois desenhos de
+   tamanhos diferentes, e sem uma caixa de largura fixa cada linha
+   começaria o slider num x diferente da vizinha. */
+.arcbar-volume-row-icon-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background-color: transparent;
+  color: rgba(36, 36, 36, 0.85);
+  transition-duration: 130ms;
+}
+
+.arcbar-volume-row-icon-button:hover,
+.arcbar-volume-row-icon-button:focus {
+  color: #242424;
+  background-color: rgba(0, 0, 0, 0.10);
+}
+
+.arcbar-volume-row-icon-button:active {
+  background-color: rgba(0, 0, 0, 0.16);
+}
+
+.arcbar-volume-row-icon {
+  icon-size: 22px;
+}
+
+/* Punho e parte ativa na TINTA do menu (`#242424`, a dos rótulos), e não
+   no azul de destaque: é a mesma escolha do realce das linhas — nenhum
+   destes menus usa cor de acento, e um slider azul seria a única coisa
+   colorida no vidro. */
+.arcbar-volume-menu .slider {
+  height: 16px;
+  color: #242424;
+  -slider-handle-radius: 7px;
+  -barlevel-height: 4px;
+  -barlevel-background-color: rgba(0, 0, 0, 0.13);
+  -barlevel-active-background-color: rgba(36, 36, 36, 0.85);
+  /* Só aparece acima dos 100%, quando a chave do GNOME deixa amplificar:
+     dali para a frente o som distorce, e o vermelho é o aviso. */
+  -barlevel-overdrive-color: #d1453b;
+  -barlevel-overdrive-separator-width: 2px;
+  -barlevel-border-width: 0;
+  -barlevel-border-color: transparent;
+}
+
+/* O tema escreve `.slider:hover` (duas classes, como o seletor acima), e
+   num empate quem chega por último ganha — mas contar com a ordem dos
+   arquivos para uma linha que o tema pinta de branco seria apostar; daí a
+   regra explícita. */
+.arcbar-volume-menu .slider:hover {
+  color: #242424;
+  -barlevel-active-background-color: #242424;
+}
+
+.arcbar-volume-empty {
+  color: rgba(36, 36, 36, 0.60);
+  font-size: 12px;
+  padding: 10px 0 12px 0;
+}
+
+/* ------------------------------------------------------------------
+ * Notificações (centro)
+ *
+ * O indicador é o par "ícone do app + total": os ícones dizem DE QUEM é a
+ * notificação sem precisar abrir nada — é o que se lê de relance numa
+ * barra —, e o número diz quantas são, inclusive as dos apps que não
+ * couberam nos três ícones (MAX_INDICATOR_ICONS, em
+ * src/notificationButton.js).
+ *
+ * Isto tudo vive na BARRA, que continua escura — nada aqui acompanha a
+ * virada do vidro dos menus para o claro.
+ * ------------------------------------------------------------------ */
+#panel.arcbar-panel .arcbar-notification-button {
+  -natural-hpadding: 10px;
+  -minimum-hpadding: 6px;
+  /* Quadrado ele não pode ser (a largura é a da fileira de ícones mais o
+     total), mas o realce é o mesmo dos botões da direita: mesma altura de
+     32px e o mesmo canto de 10px. Sem isto ele seria a única pastilha de
+     28px de altura numa barra de teclas de 32. */
+  border-width: 4px !important;
+  border-radius: 10px;
+}
+
+#panel.arcbar-panel .arcbar-notification-indicator {
+  spacing: 6px;
+}
+
+/* Os ícones de app são coloridos e cheios, não símbolos: encostados um no
+   outro viram uma mancha, e 4px entre eles bastam para separá-los sem a
+   fileira crescer. */
+#panel.arcbar-panel .arcbar-notification-icons {
+  spacing: 4px;
+}
+
+/* O total. Pastilha e não rótulo solto: sobre a barra transparente um
+   número branco no meio do wallpaper se perde, e o disco escuro é o que o
+   segura — é o mesmo papel que o `#121212` faz pelo relógio quando a
+   barra está opaca. */
+#panel.arcbar-panel .arcbar-notification-count {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: bold;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 9px;
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Mesma sombra dos outros widgets quando a barra fica transparente (ver
+   `.arcbar-panel-transparent` no topo). Os ícones de app entram junto: são
+   coloridos e, sobre um wallpaper claro, é a sombra que desenha a borda
+   deles. */
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-notification-count,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-notification-app-icon {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------------------
+ * Menu de notificações — o vidro vem de `.arcbar-glass-menu`; daqui para
+ * baixo é só a lista.
+ *
+ * As linhas seguem o vocabulário da lista do ArcTab (ver
+ * ../ArcTab@claudson/stylesheet.css, `.arctab-list-row`): ícone à
+ * esquerda, título forte, subtítulo apagado, canto arredondado. O que
+ * muda é o realce — lá é o anel azul de uma seleção que o usuário move
+ * com o Tab, aqui é o mesmo véu escuro do menu de energia, porque o
+ * destaque acompanha o ponteiro e uma cor forte a cada passada do mouse
+ * viraria pisca-pisca.
+ * ------------------------------------------------------------------ */
+.arcbar-notification-menu {
+  /* Largura fixa, e não `min-width`: os rótulos são cortados por
+     reticências (single_line_mode, em src/notificationRow.js), então sem
+     um limite de largura a linha mais comprida da lista mandaria no
+     tamanho do menu e ele mudaria de largura a cada notificação. */
+  width: 400px;
+}
+
+.arcbar-notification-header {
+  padding: 2px 6px 8px 6px;
+  spacing: 8px;
+}
+
+.arcbar-notification-header-title {
+  color: rgba(36, 36, 36, 0.65);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.arcbar-notification-clear {
+  color: rgba(36, 36, 36, 0.75);
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0);
+  transition-duration: 130ms;
+}
+
+.arcbar-notification-clear:hover,
+.arcbar-notification-clear:focus {
+  color: #242424;
+  background-color: rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+.arcbar-notification-clear:active {
+  background-color: rgba(0, 0, 0, 0.18);
+}
+
+/* O ScrollView não pinta nada: quem dá o limite visual é o vidro em
+   volta, e um fundo aqui criaria uma segunda caixa dentro da primeira.
+   O `max-height` é o que impede uma tarde inteira de notificações de
+   esticar o menu até fora da tela — passando disso a lista rola. */
+.arcbar-notification-scroll {
+  max-height: 420px;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Barra de rolagem de SOBREPOSIÇÃO (`overlay_scrollbars`, em
+   src/notificationButton.js): ela flutua sobre a última coluna de pixels
+   em vez de roubar largura da linha. Sem estilo próprio herdaria a barra
+   larga e com trilho pintado do tema, desenhada para lista opaca e não
+   para vidro. Seletores de ELEMENTO, o mesmo vocabulário do stylesheet do
+   Shell — nenhuma classe nova entra no contrato. */
+.arcbar-notification-scroll StScrollBar {
+  padding: 0;
+  width: 6px;
+}
+
+.arcbar-notification-scroll StScrollBar StBin#trough {
+  background-color: transparent;
+  border: none;
+}
+
+.arcbar-notification-scroll StScrollBar StButton#vhandle {
+  border-radius: 3px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.25);
+  margin: 2px;
+}
+
+.arcbar-notification-list {
+  spacing: 2px;
+}
+
+.arcbar-notification-row {
+  padding: 8px 10px;
+  border-radius: 12px !important;
+  background-color: transparent;
+  /* Borda transparente já com a espessura do realce: sem o espaço
+     reservado, passar o mouse mexeria a caixa em 1px de cada lado e o
+     texto daria um pulinho. Mesmo truque das linhas do menu de energia. */
+  border: 1px solid rgba(0, 0, 0, 0);
+  box-shadow: none;
+  transition-duration: 130ms !important;
+}
+
+.arcbar-notification-row:hover,
+.arcbar-notification-row:focus {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.arcbar-notification-row:active {
+  background-color: rgba(0, 0, 0, 0.14) !important;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+}
+
+.arcbar-notification-row-box {
+  spacing: 10px;
+}
+
+.arcbar-notification-row-title {
+  color: #242424 !important;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+/* Contexto, não o dado principal da linha — mesma relação de peso entre
+   `.arctab-list-title` e `.arctab-list-subtitle`. */
+.arcbar-notification-row-body {
+  color: rgba(36, 36, 36, 0.70);
+  font-size: 12px;
+}
+
+.arcbar-notification-row-time {
+  color: rgba(36, 36, 36, 0.55);
+  font-size: 11px;
+}
+
+/* O "x" só ganha corpo quando o ponteiro chega nele: em repouso ele é
+   discreto para a linha ser lida como texto, e não como uma fileira de
+   botões. */
+.arcbar-notification-row-close {
+  color: rgba(36, 36, 36, 0.60);
+  padding: 4px;
+  border-radius: 11px;
+  background-color: transparent;
+  transition-duration: 130ms;
+}
+
+.arcbar-notification-row-close:hover,
+.arcbar-notification-row-close:focus {
+  color: #242424;
+  background-color: rgba(0, 0, 0, 0.14);
+}
+
+.arcbar-notification-row-close:active {
+  background-color: rgba(0, 0, 0, 0.20);
+}
+
+.arcbar-notification-empty {
+  color: rgba(36, 36, 36, 0.60);
+  font-size: 12px;
+  padding: 18px 0 14px 0;
+}

@@ -1,0 +1,17 @@
+{
+  "uuid": "ArcBar@claudson",
+  "name": "ArcBar",
+  "description": "A minimal top bar replacement for GNOME Shell. Takes over the panel: CPU and memory usage on the left, notifications in the middle (app icons, count and a list you can dismiss or click to open the app), and on the right the clock, a wired network button that opens Settings on the network page, a sound menu (system volume plus a slider per app playing audio) and a power menu (power off, restart, suspend, restart session), flat #121212 background.",
+  "shell-version": [
+    "46",
+    "47",
+    "48",
+    "49",
+    "50"
+  ],
+  "session-modes": [
+    "user"
+  ],
+  "url": "https://github.com/claudsondouglas/ArcBar",
+  "version": 1
+}

@@ -1599,6 +1599,7 @@
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-system-stat-value,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-background-app-icon,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-network-button .system-status-icon,
+#panel.arcbar-panel.arcbar-panel-transparent .arcbar-bluetooth-button .system-status-icon,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-volume-button .system-status-icon,
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-power-button .system-status-icon {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
@@ -1621,6 +1622,7 @@
    outra altura desquadra o alvo, e é o preço de a altura da barra ser do
    tema. */
 #panel.arcbar-panel .arcbar-network-button,
+#panel.arcbar-panel .arcbar-bluetooth-button,
 #panel.arcbar-panel .arcbar-volume-button,
 #panel.arcbar-panel .arcbar-power-button {
   -natural-hpadding: 12px;
@@ -1642,6 +1644,7 @@
    as medidas acima). Sobre o #121212 da barra, o branco puro chapa e puxa o
    olho para os glifos antes do conteúdo das janelas. */
 #panel.arcbar-panel .arcbar-network-button .system-status-icon,
+#panel.arcbar-panel .arcbar-bluetooth-button .system-status-icon,
 #panel.arcbar-panel .arcbar-volume-button .system-status-icon,
 #panel.arcbar-panel .arcbar-power-button .system-status-icon {
   color: rgba(255, 255, 255, 0.9);
@@ -1719,11 +1722,11 @@
   color: #242424;
 }
 
-/* O tema do Shell impõe `min-width: 15em` em `.popup-menu` — o menu de
-   energia tem cinco linhas curtas e não precisa de meia tela de largura.
+/* O tema do Shell impõe `min-width: 15em` em `.popup-menu` — os menus de
+   ações têm linhas curtas e não precisam de meia tela de largura.
    Mesma especificidade (uma classe), e no St quem chega por último
    ganha. */
-.arcbar-power-menu {
+.arcbar-action-menu {
   min-width: 180px;
 }
 
@@ -1776,11 +1779,11 @@
   border-radius: 14px;
 }
 
-/* Linhas do menu. O tema do Shell dá 9px/12px e 6px entre ícone e texto,
+/* Linhas dos menus de ação. O tema do Shell dá 9px/12px e 6px entre ícone e texto,
    o MacTahoe aperta ainda mais (6px/8px e 4px) — pouco para uma lista de
-   quatro ações que o usuário clica com pressa, e com o ícone quase
+   ações que o usuário clica com pressa, e com o ícone quase
    encostado no rótulo. */
-.arcbar-power-menu .popup-menu-item {
+.arcbar-action-menu .popup-menu-item {
   padding: 10px 14px;
   spacing: 12px;
   border-radius: 12px !important;
@@ -1792,8 +1795,8 @@
   transition-duration: 130ms !important;
 }
 
-.arcbar-power-menu .popup-menu-item StIcon,
-.arcbar-power-menu .popup-menu-item .popup-menu-icon {
+.arcbar-action-menu .popup-menu-item StIcon,
+.arcbar-action-menu .popup-menu-item .popup-menu-icon {
   color: rgba(36, 36, 36, 0.85);
   icon-size: 16px;
 }
@@ -1807,23 +1810,23 @@
    linha sobre o fumê aqui só lavaria o rótulo escuro que ele deveria
    destacar. A borda transparente acima reserva o espaço do rim para o
    texto não dar um pulinho de 1px ao entrar no estado. */
-.arcbar-power-menu .popup-menu-item:hover,
-.arcbar-power-menu .popup-menu-item:focus,
-.arcbar-power-menu .popup-menu-item:selected {
+.arcbar-action-menu .popup-menu-item:hover,
+.arcbar-action-menu .popup-menu-item:focus,
+.arcbar-action-menu .popup-menu-item:selected {
   background-color: rgba(0, 0, 0, 0.08) !important;
   border: 1px solid rgba(0, 0, 0, 0.10);
   color: #242424 !important;
   transition-duration: 130ms !important;
 }
 
-.arcbar-power-menu .popup-menu-item:active,
-.arcbar-power-menu .popup-menu-item.selected:active {
+.arcbar-action-menu .popup-menu-item:active,
+.arcbar-action-menu .popup-menu-item.selected:active {
   background-color: rgba(0, 0, 0, 0.14) !important;
   border: 1px solid rgba(0, 0, 0, 0.16);
   color: #242424 !important;
 }
 
-.arcbar-power-menu .popup-menu-item:insensitive {
+.arcbar-action-menu .popup-menu-item:insensitive {
   background-color: transparent !important;
   color: rgba(36, 36, 36, 0.45) !important;
 }
@@ -1966,6 +1969,52 @@
   color: rgba(36, 36, 36, 0.60);
   font-size: 12px;
   padding: 10px 0 12px 0;
+}
+
+.arcbar-bluetooth-menu {
+  width: 320px;
+}
+
+.arcbar-bluetooth-title {
+  color: #242424 !important;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.arcbar-bluetooth-title-icon {
+  icon-size: 22px;
+  color: #3584e4;
+  margin-right: 10px;
+}
+
+.arcbar-bluetooth-device {
+  spacing: 10px;
+}
+
+.arcbar-bluetooth-device-icon {
+  icon-size: 18px;
+  color: rgba(36, 36, 36, 0.82);
+}
+
+.arcbar-bluetooth-device-name {
+  color: #242424 !important;
+  font-size: 13px;
+}
+
+.arcbar-bluetooth-device-battery,
+.arcbar-bluetooth-empty {
+  color: rgba(36, 36, 36, 0.60);
+  font-size: 12px;
+}
+
+.arcbar-bluetooth-battery-icon {
+  icon-size: 16px;
+  color: rgba(36, 36, 36, 0.72);
+}
+
+.arcbar-bluetooth-state-icon {
+  icon-size: 16px;
+  color: #3584e4;
 }
 
 .arcbar-storage-menu {

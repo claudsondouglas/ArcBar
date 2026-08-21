@@ -230,6 +230,20 @@ export class BackgroundAppsModel {
         this._onChanged = null;
     }
 
+    /** Encerra todos os escopos que pertencem ao app, incluindo os filhos. */
+    stop(app) {
+        const candidate = this._candidates.get(app.id);
+        if (!candidate)
+            return;
+
+        // StopUnit age sobre o cgroup inteiro do escopo, não apenas sobre o
+        // processo que abriu o app. Assim helpers, bandeja e subprocessos
+        // também terminam. Um app pode ter mais de um escopo; parar todos é
+        // intencional e UnitRemoved fará a lista se atualizar em seguida.
+        for (const unit of candidate.units)
+            this._call('StopUnit', new GLib.Variant('(ss)', [unit, 'replace']));
+    }
+
     _call(method, parameters, cancellable = this._cancellable) {
         this._proxy?.call(method, parameters, Gio.DBusCallFlags.NONE, -1, cancellable,
             (proxy, result) => {

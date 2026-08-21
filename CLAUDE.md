@@ -151,7 +151,8 @@ than one name.
 ### Background apps
 
 Right of the two percentages, one icon per app that is **running with no window** — the app that
-was closed to a tray that GNOME does not draw. Clicking one brings it back.
+was closed to a tray that GNOME does not draw. Clicking one brings it back; right-clicking opens a
+context menu whose **Encerrar** action stops every systemd scope associated with the app.
 
 The obvious source is the wrong one. `org.freedesktop.background.Monitor`, the portal interface
 behind GNOME's own "Background Apps" menu, builds its list from what an app *declared* through
@@ -188,6 +189,10 @@ because the map is keyed by the resolved app.
 Clicking calls `Shell.App.activate()`, which with no windows is the same launch the app grid does —
 a single-instance app shows the window it already had instead of opening a second. The icon then
 removes itself, because that new window reaches the model through `tracked-windows-changed`.
+
+“Encerrar” calls `StopUnit(unit, 'replace')` for every scope resolved to that app. Stopping the
+scope, rather than signalling only its launch PID, terminates the complete cgroup including tray
+and helper processes. `UnitRemoved` then drives the usual model refresh and removes the icon.
 
 With nothing in the background the whole widget leaves the bar: the actor is a direct child of
 `_leftBox`, and a box skips an invisible child along with the `spacing` that would come with it.

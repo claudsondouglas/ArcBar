@@ -38,8 +38,12 @@ class ArcBarBackgroundApps extends St.BoxLayout {
     _sync() {
         this.destroy_all_children();
 
-        for (const app of this._model.apps)
-            this.add_child(new ArcBarBackgroundAppIcon(app, target => this._activate(target)));
+        for (const app of this._model.apps) {
+            this.add_child(new ArcBarBackgroundAppIcon(
+                app,
+                target => this._activate(target),
+                target => this._model?.stop(target)));
+        }
 
         this.visible = this._model.apps.length > 0;
     }

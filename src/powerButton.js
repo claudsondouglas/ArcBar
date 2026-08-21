@@ -31,6 +31,7 @@ class ArcBarPowerButton extends PanelMenu.Button {
         }));
 
         this.menu.actor?.add_style_class_name('arcbar-power-menu');
+        this.menu.actor?.add_style_class_name('arcbar-action-menu');
 
         this._systemActions = SystemActions.getDefault();
         for (const item of ITEMS)

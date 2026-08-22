@@ -131,14 +131,15 @@ enquanto ela abre. Numa máquina com duas portas, a que está conectada é a res
 Estado do adaptador e dispositivos, lidos da mesma biblioteca (`GnomeBluetooth`) que o GNOME
 usa. Sem adaptador nenhum, o botão sai da barra.
 
-O menu de vidro traz uma linha por dispositivo pareado, confiável ou conectado, com o ícone do
-tipo, o nome, a bateria quando o aparelho a informa, e um ícone dizendo se está conectado.
-Clicar na linha conecta ou desconecta aquele dispositivo. Sem nenhum, a linha diz "Nenhum
-dispositivo pareado" ou "Bluetooth desligado", conforme o adaptador. No fim, um atalho para as
-"Configurações de Bluetooth".
+O cabeçalho do menu de vidro traz uma chave para ligar e desligar o adaptador. Abaixo há uma
+linha por dispositivo pareado, confiável ou conectado, com o ícone do tipo, o nome, a bateria
+quando o aparelho a informa, e um ícone dizendo se está conectado. Clicar na linha conecta ou
+desconecta aquele dispositivo. Sem nenhum, a linha diz "Nenhum dispositivo pareado" ou
+"Bluetooth desligado", conforme o adaptador. No fim, um atalho para as "Configurações de
+Bluetooth".
 
 Aparelhos apenas descobertos por perto não entram na lista, do mesmo jeito que no submenu
-nativo. O menu é reconstruído a cada abertura, para refletir conexão e bateria.
+nativo. O menu é atualizado quando o estado do adaptador ou dos dispositivos muda.
 
 ## Som
 
@@ -163,15 +164,16 @@ rápidos sempre mostram o mesmo número. Sem nenhuma saída de áudio o botão s
 
 ## Energia
 
-- Desligar
-- Reiniciar
-- Suspender
-- Reiniciar sessão (encerra a sessão e volta para o GDM)
+O cabeçalho mostra o avatar, o nome da pessoa, o usuário e o computador da sessão atual. As
+ações ficam separadas em dois grupos:
 
-Os quatro passam pelo `SystemActions` do próprio shell, então os diálogos de confirmação, os
+- Bloquear tela, trocar usuário e encerrar sessão
+- Suspender, reiniciar e desligar
+
+Todas passam pelo `SystemActions` do próprio shell, então os diálogos de confirmação, os
 inibidores e as travas de administração se comportam como no GNOME original, e uma ação
-indisponível some do menu em vez de falhar calada. No Wayland não existe reiniciar o shell no
-lugar, e é por isso que a última é "Reiniciar sessão" e não "Reiniciar o GNOME".
+indisponível some do menu em vez de falhar calada. Desligar fica por último e só recebe a cor de
+perigo quando está sob o ponteiro ou o foco.
 
 ## Os menus de vidro
 
@@ -195,8 +197,8 @@ uma máquina específica e é simples porque é assim que ela funciona.
   esconde o menu de data do GNOME: a sessão fica sem os dois em lugar nenhum.
 - **Sem bateria.** Nada lê o UPower, então em notebook não há indicador de carga, tempo
   restante nem aviso de bateria fraca.
-- **O Bluetooth não liga nem desliga o adaptador.** O menu conecta e desconecta dispositivos
-  já conhecidos; ligar o rádio, parear um aparelho novo ou desfazer um pareamento é nas
+- **O Bluetooth não faz pareamento.** O menu liga e desliga o adaptador e conecta ou desconecta
+  dispositivos já conhecidos; parear um aparelho novo ou desfazer um pareamento é nas
   Configurações.
 - **Textos fixos em português.** Não há gettext nem `locale/`: as strings estão escritas no
   meio do código. Em sessão em inglês a interface fica misturada.

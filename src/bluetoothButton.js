@@ -61,17 +61,9 @@ class ArcBarBluetoothButton extends PanelMenu.Button {
         this.menu.actor?.add_style_class_name('arcbar-bluetooth-menu');
 
         this._model = new BluetoothModel({ onChanged: () => this._sync() });
-        this.menu.connect('open-state-changed', (_menu, open) => {
-            if (open)
-                this._rebuild();
-        });
         this.connect('destroy', () => this._onDestroy());
 
         applyGlassMenu(this.menu);
-        // Um PopupMenu sem itens não é aberto pelo PanelMenu.Button. O menu
-        // precisa existir antes do primeiro clique; depois disso ele é
-        // reconstruído a cada abertura para refletir conexão e bateria.
-        this._rebuild();
         this._sync();
     }
 
@@ -83,23 +75,30 @@ class ArcBarBluetoothButton extends PanelMenu.Button {
             ? `Bluetooth, ${connected} conectado${connected === 1 ? '' : 's'}`
             : `Bluetooth ${this._model.powered ? 'ligado' : 'desligado'}`;
 
-        if (!this._model.available)
+        if (!this._model.available) {
             this.menu.close();
-        else if (this.menu.isOpen)
+            return;
+        }
+
+        // Mantém o conteúdo pronto antes da abertura. Esvaziar o menu no
+        // `open-state-changed` fazia o actor passar por uma alocação de largura
+        // zero enquanto o BlurEffect já estava pintando; o Cogl então tentava
+        // criar uma textura 0xN e emitia `width >= 1` a cada clique.
+        if (!this.menu.isOpen)
             this._rebuild();
     }
 
     _rebuild() {
         this.menu.removeAll();
 
-        const title = new PopupMenu.PopupMenuItem('Bluetooth', {
-            reactive: false,
+        const title = new PopupMenu.PopupSwitchMenuItem('Bluetooth', this._model.powered, {
             style_class: 'arcbar-bluetooth-title',
         });
         title.insert_child_at_index(new St.Icon({
             icon_name: this._model.iconName,
             style_class: 'arcbar-bluetooth-title-icon',
         }), 0);
+        title.connect('toggled', (_item, state) => this._model.setPowered(state));
         this.menu.addMenuItem(title);
 
         const devices = this._model.devices;
@@ -113,7 +112,10 @@ class ArcBarBluetoothButton extends PanelMenu.Button {
         }
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        const settings = new PopupMenu.PopupMenuItem('Configurações de Bluetooth');
+        const settings = new PopupMenu.PopupImageMenuItem(
+            'Configurações de Bluetooth', 'emblem-system-symbolic', {
+                style_class: 'arcbar-bluetooth-settings',
+            });
         settings.connect('activate', () => this._openSettings());
         this.menu.addMenuItem(settings);
     }

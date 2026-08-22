@@ -183,6 +183,12 @@ export class BackgroundAppsModel {
                     return;
 
                 this._proxy = proxy;
+                // Um proxy para um nome conhecido pode existir sem que haja
+                // processo atendendo esse nome. Nessa sessão, aplicativos em
+                // segundo plano simplesmente não ficam disponíveis.
+                if (!proxy.get_name_owner())
+                    return;
+
                 this._signalId = proxy.connect('g-signal', (_p, _sender, signal) => {
                     if (signal === 'UnitNew' || signal === 'UnitRemoved')
                         this._queue(true);
@@ -219,7 +225,7 @@ export class BackgroundAppsModel {
         // Antes de cancelar, ou o próprio Unsubscribe seria cancelado com o
         // resto. A conexão com o barramento é a do Shell e continua viva
         // depois da extensão, então a inscrição não se desfaz sozinha.
-        if (this._proxy)
+        if (this._proxy?.get_name_owner())
             this._call('Unsubscribe', null, null);
 
         this._cancellable?.cancel();
@@ -245,12 +251,19 @@ export class BackgroundAppsModel {
     }
 
     _call(method, parameters, cancellable = this._cancellable) {
+        if (!this._proxy?.get_name_owner())
+            return;
+
         this._proxy?.call(method, parameters, Gio.DBusCallFlags.NONE, -1, cancellable,
             (proxy, result) => {
                 try {
                     proxy.call_finish(result);
                 } catch (e) {
-                    if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+                    const cancelled = e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED);
+                    // O systemd pode sumir entre get_name_owner() e a
+                    // resposta. Sem serviço não há operação a completar.
+                    const serviceGone = !proxy.get_name_owner();
+                    if (!cancelled && !serviceGone)
                         logError(e, `[ArcBar] ${method} falhou`);
                 }
             });
@@ -279,6 +292,9 @@ export class BackgroundAppsModel {
     }
 
     _list() {
+        if (!this._proxy?.get_name_owner())
+            return;
+
         this._proxy?.call('ListUnitsByPatterns',
             new GLib.Variant('(asas)', [['active'], [UNIT_PATTERN]]),
             Gio.DBusCallFlags.NONE, -1, this._cancellable, (proxy, result) => {
@@ -286,7 +302,9 @@ export class BackgroundAppsModel {
                 try {
                     reply = proxy.call_finish(result);
                 } catch (e) {
-                    if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+                    const cancelled = e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED);
+                    const serviceGone = !proxy.get_name_owner();
+                    if (!cancelled && !serviceGone)
                         logError(e, '[ArcBar] não consegui listar os escopos de app');
                     return;
                 }

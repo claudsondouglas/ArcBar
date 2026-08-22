@@ -1,4 +1,5 @@
 import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
 import NM from 'gi://NM';
 
 export const WIRED_CONNECTED_ICON = 'network-wired-symbolic';
@@ -75,11 +76,11 @@ export class NetworkModel {
         this._cancellable = null;
 
         for (const [device, id] of this._deviceIds)
-            device.disconnect(id);
+            GObject.signal_handler_disconnect(device, id);
         this._deviceIds.clear();
 
         for (const id of this._clientIds)
-            this._client?.disconnect(id);
+            GObject.signal_handler_disconnect(this._client, id);
         this._clientIds = [];
 
         // O cliente é solto, não fechado: ele é uma conexão viva com o
@@ -101,7 +102,10 @@ export class NetworkModel {
         if (!id)
             return;
 
-        device.disconnect(id);
+        // NM.Device também tem um método `disconnect(cancellable)`. Usar a
+        // função explícita do GObject evita que o id do signal seja entregue
+        // por engano a esse método do NetworkManager.
+        GObject.signal_handler_disconnect(device, id);
         this._deviceIds.delete(device);
         this._sync();
     }

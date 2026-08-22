@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.arcbar" path="/org/gnome/shell/extensions/arcbar/">
+    <key name="adaptive-panel-color" type="b">
+      <default>true</default>
+      <summary>Adapt panel colour to the application</summary>
+      <description>Samples the application below the panel and uses a darkened version of that colour as the panel background.</description>
+    </key>
+  </schema>
+</schemalist>

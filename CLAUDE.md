@@ -331,7 +331,11 @@ fixed column each row would start its slider at a different x.
 
 ### Power actions
 
-`SystemActions.getDefault().activateAction(id)` — `power-off`, `restart`, `suspend`, `logout`.
+The menu starts with the current user's avatar, display name, login and hostname. Session actions
+(`lock-screen`, `switch-user`, `logout`) come before a separator; machine actions (`suspend`,
+`restart`, `power-off`) come after it. Power off is last and only turns red on hover/focus.
+
+`SystemActions.getDefault().activateAction(id)` routes every action through the shell.
 Going through the shell's own object keeps the confirmation dialogs, inhibitor handling and
 lockdown/GDM settings identical to stock GNOME; each item binds its `can-*` property to `visible`,
 so an unavailable action disappears instead of failing silently.
@@ -344,8 +348,7 @@ of our glass. Its `margin: 4px 12px 17px 12px` on `.popup-menu-content` has to b
 blur backdrop's constraints hang off that actor's allocation, so an asymmetric margin throws the
 blur rectangle outside the glass.
 
-"Reiniciar sessão" is the `logout` action: it ends the session and returns to GDM. There is no
-in-place shell restart on Wayland.
+"Encerrar sessão" is the `logout` action: it ends the session and returns to GDM.
 
 ### The glass menu
 

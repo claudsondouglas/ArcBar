@@ -194,7 +194,41 @@
    Mesma especificidade (uma classe), e no St quem chega por último
    ganha. */
 .arcbar-action-menu {
-  min-width: 180px;
+  min-width: 230px;
+}
+
+/* Identidade no topo do menu de energia. É uma linha informativa, não um
+   botão: o nome ancora o menu na sessão atual e a segunda linha distingue
+   usuário e máquina sem competir com as ações. */
+.arcbar-power-menu .arcbar-power-identity {
+  padding: 10px 14px 9px 14px;
+  spacing: 12px;
+  background-color: transparent !important;
+  border: none;
+}
+
+.arcbar-power-avatar {
+  icon-size: 26px;
+  padding: 5px;
+  border-radius: 18px;
+  color: rgba(36, 36, 36, 0.78);
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.arcbar-power-identity-labels {
+  spacing: 2px;
+}
+
+.arcbar-power-user-name {
+  color: #242424;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.arcbar-power-device-name {
+  color: rgba(36, 36, 36, 0.58);
+  font-weight: 400;
+  font-size: 11px;
 }
 
 .arcbar-glass-menu .popup-menu-content {
@@ -291,6 +325,22 @@
   background-color: rgba(0, 0, 0, 0.14) !important;
   border: 1px solid rgba(0, 0, 0, 0.16);
   color: #242424 !important;
+}
+
+/* A cor de perigo só aparece quando há intenção explícita; em repouso,
+   Desligar continua pertencendo visualmente à mesma lista. */
+.arcbar-power-menu .arcbar-power-destructive:hover,
+.arcbar-power-menu .arcbar-power-destructive:focus,
+.arcbar-power-menu .arcbar-power-destructive:selected {
+  background-color: rgba(192, 28, 40, 0.10) !important;
+  border-color: rgba(192, 28, 40, 0.18);
+  color: #a51d2d !important;
+}
+
+.arcbar-power-menu .arcbar-power-destructive:hover StIcon,
+.arcbar-power-menu .arcbar-power-destructive:focus StIcon,
+.arcbar-power-menu .arcbar-power-destructive:selected StIcon {
+  color: #a51d2d;
 }
 
 .arcbar-action-menu .popup-menu-item:insensitive {
@@ -429,13 +479,16 @@
 }
 
 .arcbar-bluetooth-menu {
-  width: 320px;
+  width: 340px;
 }
 
 .arcbar-bluetooth-title {
   color: #242424 !important;
   font-size: 15px;
   font-weight: bold;
+  padding: 10px 12px;
+  spacing: 10px;
+  border-radius: 12px !important;
 }
 
 .arcbar-bluetooth-title-icon {
@@ -446,6 +499,8 @@
 
 .arcbar-bluetooth-device {
   spacing: 10px;
+  padding: 9px 12px;
+  border-radius: 12px !important;
 }
 
 .arcbar-bluetooth-device-icon {
@@ -464,6 +519,10 @@
   font-size: 12px;
 }
 
+.arcbar-bluetooth-empty {
+  padding: 10px 12px 12px 12px;
+}
+
 .arcbar-bluetooth-battery-icon {
   icon-size: 16px;
   color: rgba(36, 36, 36, 0.72);
@@ -472,6 +531,17 @@
 .arcbar-bluetooth-state-icon {
   icon-size: 16px;
   color: #3584e4;
+}
+
+.arcbar-bluetooth-settings {
+  padding: 10px 12px;
+  spacing: 10px;
+  border-radius: 12px !important;
+}
+
+.arcbar-bluetooth-settings .popup-menu-icon {
+  icon-size: 16px;
+  color: rgba(36, 36, 36, 0.72);
 }
 
 .arcbar-storage-menu {
@@ -619,6 +689,27 @@
 #panel.arcbar-panel.arcbar-panel-transparent .arcbar-notification-app-icon {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* The sampled application colour can be light. PanelTransparency adds this
+   class using WCAG relative luminance so every monochrome item on the bar
+   keeps enough contrast without changing the already-light popup menus. */
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-clock-label,
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-system-stat-value,
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-notification-count {
+  color: rgba(48, 48, 48, 0.82);
+}
+
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-system-stat-icon,
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-network-button .system-status-icon,
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-bluetooth-button .system-status-icon,
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-volume-button .system-status-icon,
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-power-button .system-status-icon {
+  color: rgba(48, 48, 48, 0.9);
+}
+
+#panel.arcbar-panel.arcbar-panel-light-background .arcbar-notification-count {
+  background-color: rgba(0, 0, 0, 0.14);
 }
 
 /* ------------------------------------------------------------------

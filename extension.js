@@ -86,7 +86,8 @@ export default class ArcBarExtension extends Extension {
 
             Main.panel.add_style_class_name('arcbar-panel');
 
-            this._transparency = new PanelTransparency();
+            this._settings = this.getSettings();
+            this._transparency = new PanelTransparency(this._settings);
             this._transparency.enable();
 
             // GNOME re-shows its own indicators whenever the session mode
@@ -116,6 +117,7 @@ export default class ArcBarExtension extends Extension {
 
             this._transparency?.disable();
             this._transparency = null;
+            this._settings = null;
 
             Main.panel.remove_style_class_name('arcbar-panel');
 

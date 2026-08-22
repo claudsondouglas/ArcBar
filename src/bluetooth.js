@@ -36,6 +36,16 @@ export class BluetoothModel {
         return this.powered ? BLUETOOTH_ON_ICON : BLUETOOTH_OFF_ICON;
     }
 
+    setPowered(powered) {
+        if (!this.available || powered === this.powered)
+            return;
+
+        // A propriedade é gravável no GnomeBluetooth.Client e encaminha a
+        // mudança ao adaptador padrão. O notify correspondente atualiza o
+        // botão e o conteúdo do menu quando o BlueZ confirmar o novo estado.
+        this._client.default_adapter_powered = powered;
+    }
+
     get devices() {
         const devices = [];
         for (let i = 0; i < this._devices.get_n_items(); i++) {

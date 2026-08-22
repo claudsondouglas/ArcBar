@@ -88,27 +88,17 @@
   icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-/* Rede, volume e energia (direita), nessa ordem — dada pelo índice em
+/* Rede, Bluetooth, volume e energia (direita), nessa ordem — dada pelo índice em
    extension.js, não por CSS.
 
-   O alvo de clique dos três é QUADRADO, 40×40: a altura já é a do painel
-   (40px, do tema), e a largura é o que o hpadding decide, porque o
-   ButtonBox do panelMenu.js ignora `padding` e mede o filho +
-   2×hpadding — a borda nem entra na conta. Com o glifo de 16px,
-   (40 − 16) / 2 = 12px de cada lado fecha o quadrado. Com o hpadding
-   zerado, como estava antes, o botão tinha a largura do glifo: um alvo
-   de 16px de largura por 40 de altura, uma fresta em pé que exigia mira
-   para acertar.
-
-   Os 12px são um número do painel de 40px, não um gosto: um tema com
-   outra altura desquadra o alvo, e é o preço de a altura da barra ser do
-   tema. */
+   O tema já fornece uma área de botão generosa. Os 6px laterais mantêm um
+   alvo confortável sem espalhar os quatro glifos pela ponta da barra. */
 #panel.arcbar-panel .arcbar-network-button,
 #panel.arcbar-panel .arcbar-bluetooth-button,
 #panel.arcbar-panel .arcbar-volume-button,
 #panel.arcbar-panel .arcbar-power-button {
-  -natural-hpadding: 12px;
-  -minimum-hpadding: 12px;
+  -natural-hpadding: 6px;
+  -minimum-hpadding: 6px;
   /* O MacTahoe desenha o realce do hover DENTRO de uma borda transparente
      de 6px (com !important), então é ela quem decide o tamanho do realce:
      40 − 2×4 = 32×32, um quadrado concêntrico ao alvo de 40. Ela também é
@@ -131,18 +121,13 @@
 #panel.arcbar-panel .arcbar-power-button .system-status-icon {
   color: rgba(255, 255, 255, 0.9);
   /* O tema põe 4px em volta de cada glifo, e essa linha virou parte da
-     conta do quadrado: o ButtonBox mede o FILHO + 2×hpadding, então com os
-     4px o filho teria 24px e o botão 48 de largura por 40 de altura. Com
-     eles zerados o filho é o glifo de 16px, e os 12px de hpadding fecham
-     os 40. */
+   conta do botão: o ButtonBox mede o FILHO + 2×hpadding. Zerando-os aqui,
+   só o espaçamento compacto definido no botão participa da largura. */
   padding: 0;
 }
 
-/* Os 8px de vão continuam sendo a distância que se vê, só que medida agora
-   entre os REALCES e não entre os glifos: com os botões quadrados, cada um
-   já carrega 12px de hpadding, e somar `spacing` a isso afastaria os
-   ícones em 32px — três teclas soltas na ponta da barra em vez de um
-   grupo.
+/* O vão é medido entre os REALCES e não entre os glifos. Cada botão já
+   carrega hpadding, e somar `spacing` afastaria novamente os quatro ícones.
 
    Zerado, o vão entre dois realces é a borda transparente de 4px de cada
    botão: 4 + 4 = os mesmos 8px. E o `padding-right` completa 8 até a borda
@@ -365,11 +350,10 @@
 
 .arcbar-volume-row {
   padding: 6px 8px;
-  spacing: 10px;
 }
 
 .arcbar-volume-row-body {
-  spacing: 2px;
+  spacing: 5px;
 }
 
 .arcbar-volume-row-head {
@@ -388,48 +372,39 @@
   font-size: 11px;
 }
 
-/* O ícone é botão (muda e desmuta), então precisa dizer que é clicável —
-   mesmo véu escuro das linhas dos outros menus, só que redondo, porque o
-   alvo é um ícone e não uma faixa.
-
-   O tamanho é FIXO, e não o que o ícone pedir: o glifo do sistema é
+/* O ícone flutua sobre o slider e não participa da entrada. A caixa é
+   FIXA, e não do tamanho que o ícone pedir: o glifo do sistema é
    simbólico e o do app é a arte colorida do tema, dois desenhos de
-   tamanhos diferentes, e sem uma caixa de largura fixa cada linha
-   começaria o slider num x diferente da vizinha. */
-.arcbar-volume-row-icon-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background-color: transparent;
-  color: rgba(36, 36, 36, 0.85);
-  transition-duration: 130ms;
-}
-
-.arcbar-volume-row-icon-button:hover,
-.arcbar-volume-row-icon-button:focus {
-  color: #242424;
-  background-color: rgba(0, 0, 0, 0.10);
-}
-
-.arcbar-volume-row-icon-button:active {
-  background-color: rgba(0, 0, 0, 0.16);
+   tamanhos diferentes. `reactive: false` no JS faz o gesto atravessar essa
+   camada e chegar ao slider que ocupa a cápsula toda. */
+.arcbar-volume-row-icon-overlay {
+  width: 42px;
+  height: 42px;
+  color: rgba(36, 36, 36, 0.88);
 }
 
 .arcbar-volume-row-icon {
   icon-size: 22px;
 }
 
-/* Punho e parte ativa na TINTA do menu (`#242424`, a dos rótulos), e não
-   no azul de destaque: é a mesma escolha do realce das linhas — nenhum
-   destes menus usa cor de acento, e um slider azul seria a única coisa
-   colorida no vidro. */
+.arcbar-volume-control {
+  height: 42px;
+  spacing: 0;
+  border-radius: 11px;
+  background-color: rgba(0, 0, 0, 0.10);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.16);
+}
+
+/* A parte ativa é a superfície clara da referência; o fundo da cápsula
+   aparece como a parte ainda vazia. Sem punho: a fronteira entre as duas
+   superfícies já comunica a posição e deixa a peça mais limpa. */
 .arcbar-volume-menu .slider {
-  height: 16px;
-  color: #242424;
-  -slider-handle-radius: 7px;
-  -barlevel-height: 4px;
-  -barlevel-background-color: rgba(0, 0, 0, 0.13);
-  -barlevel-active-background-color: rgba(36, 36, 36, 0.85);
+  height: 42px;
+  color: transparent;
+  -slider-handle-radius: 0;
+  -barlevel-height: 42px;
+  -barlevel-background-color: transparent;
+  -barlevel-active-background-color: rgba(255, 255, 255, 0.96);
   /* Só aparece acima dos 100%, quando a chave do GNOME deixa amplificar:
      dali para a frente o som distorce, e o vermelho é o aviso. */
   -barlevel-overdrive-color: #d1453b;
@@ -443,8 +418,8 @@
    arquivos para uma linha que o tema pinta de branco seria apostar; daí a
    regra explícita. */
 .arcbar-volume-menu .slider:hover {
-  color: #242424;
-  -barlevel-active-background-color: #242424;
+  color: transparent;
+  -barlevel-active-background-color: white;
 }
 
 .arcbar-volume-empty {
@@ -504,23 +479,38 @@
 }
 
 .arcbar-storage-summary {
+  spacing: 2px;
+  padding: 10px 10px 8px 10px;
+}
+
+.arcbar-storage-summary-title {
   color: #242424;
   font-size: 14px;
   font-weight: bold;
-  padding: 8px 10px 10px 10px;
+}
+
+.arcbar-storage-summary-details {
+  color: rgba(36, 36, 36, 0.62);
+  font-size: 11px;
 }
 
 .arcbar-storage-list {
-  spacing: 2px;
+  spacing: 4px;
+  padding-bottom: 6px;
 }
 
 .arcbar-storage-row {
-  spacing: 3px;
-  padding: 8px 10px;
+  spacing: 5px;
+  padding: 8px 10px 9px 10px;
 }
 
 .arcbar-storage-row-head {
   spacing: 8px;
+}
+
+.arcbar-storage-disk-icon {
+  color: rgba(36, 36, 36, 0.72);
+  icon-size: 16px;
 }
 
 .arcbar-storage-name {
@@ -529,10 +519,44 @@
   font-weight: bold;
 }
 
-.arcbar-storage-percent,
-.arcbar-storage-details {
+.arcbar-storage-percent {
   color: rgba(36, 36, 36, 0.65);
   font-size: 11px;
+}
+
+.arcbar-storage-details {
+  color: rgba(36, 36, 36, 0.62);
+  font-size: 11px;
+}
+
+.arcbar-storage-bar {
+  height: 5px;
+  background-color: rgba(36, 36, 36, 0.12);
+  border-radius: 3px;
+}
+
+.arcbar-storage-bar-fill {
+  height: 5px;
+  background-color: #3584e4;
+  border-radius: 3px;
+}
+
+.arcbar-storage-bar-fill.warning {
+  background-color: #c88800;
+}
+
+.arcbar-storage-bar-fill.critical {
+  background-color: #c01c28;
+}
+
+.arcbar-storage-row.warning .arcbar-storage-percent {
+  color: #8b5d00;
+  font-weight: bold;
+}
+
+.arcbar-storage-row.critical .arcbar-storage-percent {
+  color: #a51d2d;
+  font-weight: bold;
 }
 
 .arcbar-storage-path {

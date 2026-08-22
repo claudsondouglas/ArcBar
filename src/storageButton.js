@@ -12,6 +12,35 @@ function size(bytes) {
     return GLib.format_size(bytes);
 }
 
+const USAGE_BAR_WIDTH = 340;
+
+function percentOf(used, total) {
+    if (!total)
+        return 0;
+
+    return Math.max(0, Math.min(100, Math.round(used / total * 100)));
+}
+
+function usageLevel(percent) {
+    if (percent >= 90)
+        return 'critical';
+    if (percent >= 75)
+        return 'warning';
+    return 'normal';
+}
+
+function createUsageBar(percent) {
+    const track = new St.BoxLayout({
+        style_class: 'arcbar-storage-bar',
+        width: USAGE_BAR_WIDTH,
+    });
+    track.add_child(new St.Widget({
+        style_class: `arcbar-storage-bar-fill ${usageLevel(percent)}`,
+        width: Math.round(USAGE_BAR_WIDTH * percent / 100),
+    }));
+    return track;
+}
+
 export const ArcBarStorageButton = GObject.registerClass(
 class ArcBarStorageButton extends PanelMenu.Button {
     _init() {
@@ -36,7 +65,15 @@ class ArcBarStorageButton extends PanelMenu.Button {
         this.add_child(indicator);
 
         this.menu.actor?.add_style_class_name('arcbar-storage-menu');
-        this._summary = new St.Label({ style_class: 'arcbar-storage-summary' });
+        this._summary = new St.BoxLayout({
+            style_class: 'arcbar-storage-summary',
+            vertical: true,
+            x_expand: true,
+        });
+        this._summaryTitle = new St.Label({ style_class: 'arcbar-storage-summary-title' });
+        this._summaryDetails = new St.Label({ style_class: 'arcbar-storage-summary-details' });
+        this._summary.add_child(this._summaryTitle);
+        this._summary.add_child(this._summaryDetails);
         this.menu.box.add_child(this._summary);
         this._list = new St.BoxLayout({
             style_class: 'arcbar-storage-list',
@@ -61,18 +98,31 @@ class ArcBarStorageButton extends PanelMenu.Button {
     _sync() {
         this._value.text = `${this._model.percent}%`;
         this.accessible_name = `Discos: ${this._model.percent}% em uso`;
-        this._summary.text = this._model.total
-            ? `${size(this._model.used)} usados de ${size(this._model.total)}`
-            : 'Armazenamento indisponível';
+        if (this._model.total) {
+            this._summaryTitle.text = `${size(this._model.used)} usados`;
+            this._summaryDetails.text =
+                `${size(this._model.total - this._model.used)} livres de ${size(this._model.total)}`;
+        } else {
+            this._summaryTitle.text = 'Armazenamento indisponível';
+            this._summaryDetails.text = 'Não foi possível ler os discos';
+        }
 
         this._list.destroy_all_children();
         for (const disk of this._model.filesystems) {
+            const percent = percentOf(disk.used, disk.total);
             const row = new St.BoxLayout({
-                style_class: 'arcbar-storage-row',
+                style_class: `arcbar-storage-row ${usageLevel(percent)}`,
                 vertical: true,
                 x_expand: true,
             });
             const head = new St.BoxLayout({ style_class: 'arcbar-storage-row-head', x_expand: true });
+            head.add_child(new St.Icon({
+                style_class: 'arcbar-storage-disk-icon',
+                icon_name: disk.path === '/'
+                    ? 'drive-harddisk-symbolic'
+                    : 'drive-removable-media-symbolic',
+                icon_size: 16,
+            }));
             head.add_child(new St.Label({
                 style_class: 'arcbar-storage-name',
                 text: disk.name,
@@ -80,12 +130,13 @@ class ArcBarStorageButton extends PanelMenu.Button {
             }));
             head.add_child(new St.Label({
                 style_class: 'arcbar-storage-percent',
-                text: `${Math.round(disk.used / disk.total * 100)}%`,
+                text: `${percent}% usado`,
             }));
             row.add_child(head);
+            row.add_child(createUsageBar(percent));
             row.add_child(new St.Label({
                 style_class: 'arcbar-storage-details',
-                text: `${size(disk.used)} usados · ${size(disk.free)} livres · ${size(disk.total)} total`,
+                text: `${size(disk.used)} usados  ·  ${size(disk.free)} livres`,
             }));
             row.add_child(new St.Label({
                 style_class: 'arcbar-storage-path',

@@ -41,6 +41,7 @@ class ArcBarVolumeButton extends PanelMenu.Button {
         this._model = new VolumeModel({
             onOutputChanged: () => this._syncOutput(),
             onStreamsChanged: () => this._queueRebuild(),
+            onDevicesChanged: () => this._queueDeviceRebuild(),
         });
 
         this._buildMenu();
@@ -53,8 +54,10 @@ class ArcBarVolumeButton extends PanelMenu.Button {
             // notificações: com o menu fechado ninguém vê essas linhas, e um
             // app que abre e fecha streams (um navegador trocando de aba de
             // vídeo, por exemplo) reconstruiria sliders à toa.
-            if (isOpen)
+            if (isOpen) {
+                this._rebuildDevices();
                 this._rebuildApps();
+            }
         });
 
         this.connect('destroy', () => this._onDestroy());
@@ -66,6 +69,17 @@ class ArcBarVolumeButton extends PanelMenu.Button {
         this.menu.box.add_child(this._master);
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        this._outputMenu = new PopupMenu.PopupSubMenuMenuItem('Saída', true);
+        this._outputMenu.icon.icon_name = 'audio-speakers-symbolic';
+        this.menu.addMenuItem(this._outputMenu);
+
+        this._inputMenu = new PopupMenu.PopupSubMenuMenuItem('Microfone', true);
+        this._inputMenu.icon.icon_name = 'audio-input-microphone-symbolic';
+        this.menu.addMenuItem(this._inputMenu);
+
+        this._appsSeparator = new PopupMenu.PopupSeparatorMenuItem();
+        this.menu.addMenuItem(this._appsSeparator);
 
         this._appsTitle = new St.Label({
             style_class: 'arcbar-volume-section-title',
@@ -81,13 +95,38 @@ class ArcBarVolumeButton extends PanelMenu.Button {
         });
         this.menu.box.add_child(this._appList);
 
-        this._appsEmpty = new St.Label({
-            style_class: 'arcbar-volume-empty',
-            text: 'Nenhum app tocando som',
-            x_align: Clutter.ActorAlign.CENTER,
-            x_expand: true,
-        });
-        this.menu.box.add_child(this._appsEmpty);
+        this._appsSeparator.visible = false;
+        this._appsTitle.visible = false;
+        this._appList.visible = false;
+    }
+
+    _queueDeviceRebuild() {
+        if (!this.menu.isOpen)
+            return;
+        this._rebuildDevices();
+    }
+
+    _rebuildDevices() {
+        this._fillDeviceMenu(this._outputMenu, this._model.getOutputs(),
+            this._model.output, stream => this._model.selectOutput(stream),
+            'audio-speakers-symbolic');
+        this._fillDeviceMenu(this._inputMenu, this._model.getInputs(),
+            this._model.input, stream => this._model.selectInput(stream),
+            'audio-input-microphone-symbolic');
+    }
+
+    _fillDeviceMenu(submenu, streams, active, select, iconName) {
+        submenu.menu.removeAll();
+        for (const stream of streams) {
+            const item = new PopupMenu.PopupImageMenuItem(
+                this._model.deviceName(stream), iconName);
+            item.setOrnament(stream === active
+                ? PopupMenu.Ornament.CHECK
+                : PopupMenu.Ornament.NONE);
+            item.connect('activate', () => select(stream));
+            submenu.menu.addMenuItem(item);
+        }
+        submenu.visible = streams.length > 0;
     }
 
     // Adiada para o ocioso pelo mesmo motivo da lista de notificações: um app
@@ -122,8 +161,10 @@ class ArcBarVolumeButton extends PanelMenu.Button {
             }));
         }
 
-        this._appList.visible = streams.length > 0;
-        this._appsEmpty.visible = streams.length === 0;
+        const hasApps = streams.length > 0;
+        this._appsSeparator.visible = hasApps;
+        this._appsTitle.visible = hasApps;
+        this._appList.visible = hasApps;
     }
 
     _syncOutput() {

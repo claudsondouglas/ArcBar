@@ -11,6 +11,67 @@ import { volumeIconName } from './volume.js';
 // alto-falante cortado apagaria justamente a informação que a linha existe
 // para dar (de QUEM é o som), então quem diz "calado" é o apagamento.
 const MUTED_OPACITY = 90;
+// Espelha o border-radius de `.arcbar-volume-control` em local.css. O
+// BarLevel do Shell usa sempre metade da altura e não expõe esse raio no CSS.
+const CONTROL_RADIUS = 11;
+
+function roundedRect(cr, x, y, width, height, radius) {
+    const right = x + width;
+    const bottom = y + height;
+    const tau = Math.PI * 2;
+
+    cr.newSubPath();
+    cr.arc(right - radius, y + radius, radius, -tau / 4, 0);
+    cr.arc(right - radius, bottom - radius, radius, 0, tau / 4);
+    cr.arc(x + radius, bottom - radius, radius, tau / 4, tau / 2);
+    cr.arc(x + radius, y + radius, radius, tau / 2, tau * 3 / 4);
+    cr.closePath();
+}
+
+const ArcBarSlider = GObject.registerClass(
+class ArcBarSlider extends Slider {
+    vfunc_repaint() {
+        const cr = this.get_context();
+        const [width, height] = this.get_surface_size();
+        const radius = Math.min(CONTROL_RADIUS, width / 2, height / 2);
+        const rtl = this.get_text_direction() === Clutter.TextDirection.RTL;
+        const progress = this._maxValue > 0 ? this._value / this._maxValue : 0;
+        const endX = width * (rtl ? 1 - progress : progress);
+
+        roundedRect(cr, 0, 0, width, height, radius);
+        cr.setSourceColor(this._barLevelColor);
+        cr.fill();
+
+        if (this._value > 0) {
+            cr.save();
+            if (rtl)
+                cr.rectangle(endX, 0, width - endX, height);
+            else
+                cr.rectangle(0, 0, endX, height);
+            cr.clip();
+            roundedRect(cr, 0, 0, width, height, radius);
+            cr.setSourceColor(this._barLevelActiveColor);
+            cr.fill();
+            cr.restore();
+        }
+
+        if (this._value > this._overdriveStart) {
+            const overdriveX = width * this._overdriveStart / this._maxValue;
+            cr.save();
+            if (rtl)
+                cr.rectangle(0, 0, width - overdriveX, height);
+            else
+                cr.rectangle(overdriveX, 0, width - overdriveX, height);
+            cr.clip();
+            roundedRect(cr, 0, 0, width, height, radius);
+            cr.setSourceColor(this._barLevelOverdriveColor);
+            cr.fill();
+            cr.restore();
+        }
+
+        cr.$dispose();
+    }
+});
 
 /**
  * Uma linha do menu de som: ícone, nome, porcentagem e o slider.
@@ -21,8 +82,8 @@ const MUTED_OPACITY = 90;
  * cada mudança de volume); num app é o ícone do próprio app, que não muda
  * enquanto ele estiver tocando.
  *
- * O ícone é um botão: clicar nele muda e desmuda, como no slider das
- * configurações rápidas do Shell.
+ * O ícone flutua sobre o começo do slider e não recebe eventos: toda a
+ * cápsula, inclusive a área sob o glifo, continua sendo o controle.
  */
 export const ArcBarVolumeRow = GObject.registerClass(
 class ArcBarVolumeRow extends St.BoxLayout {
@@ -50,18 +111,13 @@ class ArcBarVolumeRow extends St.BoxLayout {
         });
         this._iconActor = iconActor ?? this._levelIcon;
 
-        this._iconButton = new St.Button({
-            style_class: 'arcbar-volume-row-icon-button',
-            can_focus: true,
+        this._iconOverlay = new St.Bin({
+            style_class: 'arcbar-volume-row-icon-overlay',
+            reactive: false,
+            x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
             child: this._iconActor,
         });
-        // Centrado na caixa fixa do botão (ver o stylesheet). Só o alinhamento:
-        // `x_expand` aqui subiria pelo Clutter até o BoxLayout da linha — a
-        // marca de expansão de um filho vale para o pai também —, e o botão
-        // roubaria a largura que é do slider.
-        this._iconButton.connect('clicked', () => this._model.toggleMute(this._stream));
-        this.add_child(this._iconButton);
 
         // `vertical`, e não `orientation`: ver a nota em src/notificationRow.js.
         const body = new St.BoxLayout({
@@ -96,14 +152,31 @@ class ArcBarVolumeRow extends St.BoxLayout {
         });
         head.add_child(this._percent);
 
-        this._slider = new Slider(0);
+        this._slider = new ArcBarSlider(0);
+        this._slider.x_expand = true;
         // O handler fica guardado para poder ser BLOQUEADO em _sync(): sem
         // isso, escrever o valor que veio do stream mandaria esse mesmo valor
         // de volta ao stream, e um arraste viraria um cabo de guerra entre a
         // posição do mouse e a última posição confirmada pelo PulseAudio.
         this._sliderId = this._slider.connect('notify::value',
             () => this._model.setLevel(this._stream, this._slider.value));
-        body.add_child(this._slider);
+
+        // BinLayout sobrepõe os filhos: o slider ocupa a cápsula inteira e
+        // o ícone, adicionado por último, apenas flutua sobre o seu início.
+        const control = new St.Widget({
+            style_class: 'arcbar-volume-control',
+            x_expand: true,
+            layout_manager: new Clutter.BinLayout(),
+        });
+        const iconLayer = new St.BoxLayout({
+            reactive: false,
+            x_expand: true,
+            y_expand: true,
+        });
+        iconLayer.add_child(this._iconOverlay);
+        control.add_child(this._slider);
+        control.add_child(iconLayer);
+        body.add_child(control);
 
         // Nenhum handler de 'destroy' aqui: os sinais do stream foram
         // conectados com connectObject tendo ESTA linha como rastreada, e o
@@ -149,7 +222,7 @@ class ArcBarVolumeRow extends St.BoxLayout {
     }
 
     _sync() {
-        this._iconButton.reactive = this._stream !== null;
+        this._slider.reactive = this._stream !== null;
 
         const level = this._model.levelOf(this._stream);
         const muted = this._stream?.is_muted ?? true;

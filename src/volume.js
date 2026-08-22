@@ -54,10 +54,12 @@ export class VolumeModel {
      * @param {object} handlers
      * @param {Function} handlers.onOutputChanged - saída trocada, ou o volume/mudo dela
      * @param {Function} handlers.onStreamsChanged - entrou ou saiu um app da lista
+     * @param {Function} handlers.onDevicesChanged - mudou a lista/seleção de dispositivos
      */
-    constructor({ onOutputChanged, onStreamsChanged }) {
+    constructor({ onOutputChanged, onStreamsChanged, onDevicesChanged }) {
         this._onOutputChanged = onOutputChanged;
         this._onStreamsChanged = onStreamsChanged;
+        this._onDevicesChanged = onDevicesChanged;
 
         this._control = getMixerControl();
         this._output = null;
@@ -80,6 +82,7 @@ export class VolumeModel {
         this._controlIds = [
             this._control.connect('state-changed', () => this._readOutput()),
             this._control.connect('default-sink-changed', () => this._readOutput()),
+            this._control.connect('default-source-changed', () => this._onDevicesChanged()),
             this._control.connect('stream-added', (_c, id) => this._onStreamAdded(id)),
             this._control.connect('stream-removed', (_c, id) => this._onStreamRemoved(id)),
         ];
@@ -129,6 +132,37 @@ export class VolumeModel {
 
         this._appIds = new Set(streams.map(stream => stream.get_id()));
         return streams;
+    }
+
+    getOutputs() {
+        return this._control.get_sinks()
+            .filter(stream => !stream.is_virtual)
+            .sort((a, b) => this._deviceName(a).localeCompare(this._deviceName(b)));
+    }
+
+    getInputs() {
+        return this._control.get_sources()
+            .filter(stream => !stream.is_virtual &&
+                !stream.get_name()?.endsWith('.monitor'))
+            .sort((a, b) => this._deviceName(a).localeCompare(this._deviceName(b)));
+    }
+
+    get input() {
+        return this._control.get_default_source();
+    }
+
+    deviceName(stream) {
+        return this._deviceName(stream);
+    }
+
+    selectOutput(stream) {
+        if (stream)
+            this._control.set_default_sink(stream);
+    }
+
+    selectInput(stream) {
+        if (stream)
+            this._control.set_default_source(stream);
     }
 
     /** 0 quando mudo, senão a fração do volume nominal (1 = 100%). */
@@ -192,6 +226,7 @@ export class VolumeModel {
     }
 
     _onStreamAdded(id) {
+        this._onDevicesChanged();
         if (!this._isAppStream(this._control.lookup_stream_id(id)))
             return;
 
@@ -200,13 +235,19 @@ export class VolumeModel {
     }
 
     _onStreamRemoved(id) {
+        this._onDevicesChanged();
         if (this._appIds.delete(id))
             this._onStreamsChanged();
+    }
+
+    _deviceName(stream) {
+        return stream?.get_description?.() ?? stream?.get_name?.() ?? 'Dispositivo';
     }
 
     _readOutput() {
         const ready = this._control.get_state() === Gvc.MixerControlState.READY;
         this._setOutput(ready ? this._control.get_default_sink() : null);
+        this._onDevicesChanged();
     }
 
     _setOutput(stream, notify = true) {

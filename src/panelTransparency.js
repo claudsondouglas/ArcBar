@@ -10,9 +10,11 @@ const LIGHT_BACKGROUND_CLASS = 'arcbar-panel-light-background';
 const FALLBACK_COLOR = '#121212';
 // The first rows below a maximized window are commonly its border or shadow.
 const SAMPLE_OFFSET = 36;
-const SAMPLE_DELAY_MS = 250;
+const SAMPLE_DELAY_MS = 100;
 const SAMPLE_COUNT = 3;
 const BACKGROUND_DARKEN_FACTOR = 0.8;
+const LIGHT_PRESET = '#dedede';
+const DARK_PRESET = '#121212';
 
 Gio._promisify(Shell.Screenshot.prototype, 'pick_color');
 
@@ -40,6 +42,9 @@ export class PanelTransparency {
     enable() {
         this._originalPanelStyle = Main.panel.get_style();
         this._connect(this._settings, 'changed::adaptive-panel-color', () => this._sync());
+        this._connect(this._settings, 'changed::app-colors', () => this._sync());
+        this._connect(this._settings, 'changed::app-color-modes', () => this._sync());
+        this._connect(this._settings, 'changed::app-custom-colors', () => this._sync());
         this._connect(global.display, 'window-created', (_d, window) => {
             this._trackWindow(window);
             this._sync();
@@ -115,27 +120,32 @@ export class PanelTransparency {
             Main.panel.set_style('background-color: transparent;');
             Main.panel.add_style_class_name(TRANSPARENT_CLASS);
         } else {
-            Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
             Main.panel.remove_style_class_name(TRANSPARENT_CLASS);
-            Main.panel.set_style(`background-color: ${FALLBACK_COLOR};`);
             if (this._settings.get_boolean('adaptive-panel-color')) {
-                this._scheduleColorSample();
+                const appId = this._focusedAppId();
+                const savedColor = appId ? this._savedColorForApp(appId) : null;
+                if (savedColor) {
+                    this._cancelColorSample();
+                    this._colorRequest++;
+                    this._applyPanelColor(savedColor);
+                } else {
+                    Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
+                    Main.panel.set_style(`background-color: ${FALLBACK_COLOR};`);
+                    this._scheduleColorSample(appId);
+                }
             } else {
                 this._cancelColorSample();
                 this._colorRequest++;
+                Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
+                Main.panel.set_style(`background-color: ${FALLBACK_COLOR};`);
             }
         }
     }
 
-    _scheduleColorSample() {
+    _scheduleColorSample(appId) {
         this._cancelColorSample();
         const request = ++this._colorRequest;
-        this._sampleTimeoutId = GLib.timeout_add(
-            GLib.PRIORITY_DEFAULT, SAMPLE_DELAY_MS, () => {
-                this._sampleTimeoutId = 0;
-                this._collectColorSamples(request, []);
-                return GLib.SOURCE_REMOVE;
-            });
+        this._collectColorSamples(request, appId, []);
     }
 
     _cancelColorSample() {
@@ -146,17 +156,23 @@ export class PanelTransparency {
         this._sampleTimeoutId = 0;
     }
 
-    async _collectColorSamples(request, samples) {
+    async _collectColorSamples(request, appId, samples) {
         const screenshot = this._screenshot;
         if (!screenshot || request !== this._colorRequest)
             return;
 
-        const monitor = Main.layoutManager.primaryMonitor;
-        const panelBox = Main.layoutManager.panelBox;
-        const x = monitor.x + monitor.width - 1;
-        const y = Math.min(
-            panelBox.y + panelBox.height + SAMPLE_OFFSET,
-            monitor.y + monitor.height - 1);
+        const window = global.display.focus_window;
+        if (!window || !window.showing_on_its_workspace() || window.minimized)
+            return;
+
+        const rect = window.get_frame_rect();
+        // Sample inside the focused app instead of at the monitor edge. The
+        // 75% position stays on the right-hand side without hitting a border,
+        // scrollbar or the window controls in the extreme corner.
+        const x = Math.min(
+            rect.x + Math.floor(rect.width * 0.75),
+            rect.x + rect.width - 1);
+        const y = Math.min(rect.y + SAMPLE_OFFSET, rect.y + rect.height - 1);
 
         try {
             const [color] = await screenshot.pick_color(x, y);
@@ -164,33 +180,95 @@ export class PanelTransparency {
                 return;
 
             samples.push(color);
+            if (samples.length === 1)
+                this._applySampledColor(color);
+
             if (samples.length < SAMPLE_COUNT) {
                 this._sampleTimeoutId = GLib.timeout_add(
                     GLib.PRIORITY_DEFAULT, SAMPLE_DELAY_MS, () => {
                         this._sampleTimeoutId = 0;
-                        this._collectColorSamples(request, samples);
+                        this._collectColorSamples(request, appId, samples);
                         return GLib.SOURCE_REMOVE;
                     });
                 return;
             }
 
             const sampledColor = this._bestColorSample(samples);
-            const panelColor = {
-                red: Math.round(sampledColor.red * BACKGROUND_DARKEN_FACTOR),
-                green: Math.round(sampledColor.green * BACKGROUND_DARKEN_FACTOR),
-                blue: Math.round(sampledColor.blue * BACKGROUND_DARKEN_FACTOR),
-            };
-
-            if (this._isLightColor(panelColor))
-                Main.panel.add_style_class_name(LIGHT_BACKGROUND_CLASS);
-            else
-                Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
-
-            Main.panel.set_style(
-                `background-color: rgb(${panelColor.red}, ${panelColor.green}, ${panelColor.blue});`);
+            const panelColor = this._darkenedColor(sampledColor);
+            this._applyPanelColor(this._colorToHex(panelColor));
+            if (appId)
+                this._saveDetectedColor(appId, panelColor);
         } catch (error) {
             logError(error, `[ArcBar] could not sample colour at ${x},${y}`);
         }
+    }
+
+    _applySampledColor(color) {
+        this._applyPanelColor(this._colorToHex(this._darkenedColor(color)));
+    }
+
+    _darkenedColor(color) {
+        return {
+            red: Math.round(color.red * BACKGROUND_DARKEN_FACTOR),
+            green: Math.round(color.green * BACKGROUND_DARKEN_FACTOR),
+            blue: Math.round(color.blue * BACKGROUND_DARKEN_FACTOR),
+        };
+    }
+
+    _applyPanelColor(hex) {
+        const panelColor = this._hexToColor(hex);
+        if (!panelColor)
+            return;
+
+        if (this._isLightColor(panelColor))
+            Main.panel.add_style_class_name(LIGHT_BACKGROUND_CLASS);
+        else
+            Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
+
+        Main.panel.set_style(
+            `background-color: ${hex};`);
+    }
+
+    _focusedAppId() {
+        const window = global.display.focus_window;
+        if (!window)
+            return null;
+
+        return Shell.WindowTracker.get_default().get_window_app(window)?.get_id() ??
+            window.get_gtk_application_id?.() ?? window.get_wm_class?.() ?? null;
+    }
+
+    _savedColorForApp(appId) {
+        const mode = this._settings.get_value('app-color-modes').deep_unpack()[appId] ?? 'automatic';
+        if (mode === 'light')
+            return LIGHT_PRESET;
+        if (mode === 'dark')
+            return DARK_PRESET;
+        if (mode === 'custom')
+            return this._settings.get_value('app-custom-colors').deep_unpack()[appId] ?? null;
+
+        return this._settings.get_value('app-colors').deep_unpack()[appId] ?? null;
+    }
+
+    _saveDetectedColor(appId, color) {
+        const colors = this._settings.get_value('app-colors').deep_unpack();
+        colors[appId] = this._colorToHex(color);
+        this._settings.set_value('app-colors', new GLib.Variant('a{ss}', colors));
+    }
+
+    _colorToHex(color) {
+        const channel = value => Math.max(0, Math.min(255, value))
+            .toString(16).padStart(2, '0');
+        return `#${channel(color.red)}${channel(color.green)}${channel(color.blue)}`;
+    }
+
+    _hexToColor(hex) {
+        const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+        return match ? {
+            red: Number.parseInt(match[1], 16),
+            green: Number.parseInt(match[2], 16),
+            blue: Number.parseInt(match[3], 16),
+        } : null;
     }
 
     // Returns the actual sample closest to the other two. Unlike averaging,

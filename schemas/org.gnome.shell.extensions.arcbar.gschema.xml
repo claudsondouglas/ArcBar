@@ -6,5 +6,20 @@
       <summary>Adapt panel colour to the application</summary>
       <description>Samples the application below the panel and uses a darkened version of that colour as the panel background.</description>
     </key>
+    <key name="app-colors" type="a{ss}">
+      <default>{}</default>
+      <summary>Detected application colours</summary>
+      <description>Maps application IDs to the panel colours detected for them.</description>
+    </key>
+    <key name="app-color-modes" type="a{ss}">
+      <default>{}</default>
+      <summary>Application colour modes</summary>
+      <description>Maps application IDs to automatic, light, dark or custom colour modes.</description>
+    </key>
+    <key name="app-custom-colors" type="a{ss}">
+      <default>{}</default>
+      <summary>Custom application colours</summary>
+      <description>Maps application IDs to user-selected panel colours.</description>
+    </key>
   </schema>
 </schemalist>

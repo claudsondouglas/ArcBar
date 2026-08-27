@@ -208,11 +208,7 @@
 }
 
 .arcbar-power-avatar {
-  icon-size: 26px;
-  padding: 5px;
-  border-radius: 18px;
-  color: rgba(36, 36, 36, 0.78);
-  background-color: rgba(0, 0, 0, 0.08);
+  icon-size: 42px !important;
 }
 
 .arcbar-power-identity-labels {
@@ -800,6 +796,190 @@
 
 .arcbar-notification-list {
   spacing: 2px;
+}
+
+/* O player MPRIS ocupa o mesmo fluxo das notificações, mas ao contrário de
+   uma mensagem ele permanece enquanto o app puder tocar e carrega três ações
+   que precisam ser reconhecidas de relance.
+
+   Em repouso não desenha caixa nenhuma. O Now Playing do macOS mora direto
+   no material da janela, e o material aqui é o vidro do menu: um fundo e uma
+   borda próprios seriam a caixa dentro da caixa que a `.arcbar-notification-
+   scroll` logo acima já se recusa a ser. O preenchimento só aparece sob o
+   ponteiro. */
+.arcbar-media-player {
+  padding: 8px 10px;
+  border-radius: 12px !important;
+  background-color: transparent;
+  /* Borda transparente já com a espessura do realce, o mesmo cuidado de
+     `.arcbar-notification-row`: sem o espaço reservado, passar o mouse
+     mexeria a caixa em 1px de cada lado e a capa daria um pulinho. */
+  border: 1px solid rgba(0, 0, 0, 0);
+  box-shadow: none;
+  transition-duration: 130ms !important;
+}
+
+.arcbar-media-player:hover,
+.arcbar-media-player:focus {
+  background-color: rgba(0, 0, 0, 0.09) !important;
+  border: 1px solid rgba(0, 0, 0, 0.13);
+}
+
+.arcbar-media-player:active {
+  background-color: rgba(0, 0, 0, 0.14) !important;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.arcbar-media-player-box {
+  /* 12px, e não os 10px de `.arcbar-notification-row-box`: lá o ícone tem
+     16px e é um sinal ao lado do texto, aqui a capa tem 58px e é o assunto
+     do cartão — com o vão de uma linha de lista os dois blocos se encostam. */
+  spacing: 12px;
+}
+
+/* A capa é um objeto pousado no vidro, não um preenchimento do cartão. O raio
+   é mais fechado que os 12px do cartão que a contém, que é como o macOS
+   aninha cantos: o de dentro sempre menor que o de fora, ou os dois arcos
+   brigam. A sombra NÃO está aqui — quem a pinta é `.arc-e2` do common.css
+   ("cartão pousado no vidro"), carimbado junto desta classe pelo JS; declarar
+   um box-shadow próprio venceria o degrau e tiraria a capa da escada.
+
+   Estes 58px são o ÚNICO lugar onde o tamanho da capa existe: o JS pinta a
+   arte como `background-image` deste nó (é o que faz o raio recortá-la — um
+   St.Icon filho sairia de canto vivo por cima do raio, medido), então a caixa
+   aqui é a arte. Mudar o número muda a capa. */
+.arcbar-media-cover {
+  width: 58px;
+  height: 58px;
+  border-radius: 6px;
+  /* Preenchimento OPACO, e não transparente: a sombra do St é o borrão do
+     fundo do próprio nó, e um bin sem fundo não projeta nada — o `.arc-e2`
+     viraria letra morta e a capa voltaria a ficar colada no vidro. (É a mesma
+     razão pela qual o selo aqui embaixo é opaco.) A arte cobre os 58px
+     inteiros, então esta cor só aparece atrás de uma capa com transparência,
+     e é o cinza que a capa vazia já mostra. */
+  background-color: #d5d5d5;
+}
+
+/* Sem arte o lugar da capa continua ocupado — o cartão não pode encolher a
+   cada faixa que não manda `mpris:artUrl`. O gradiente vertical dá à caixa
+   vazia o relevo que a sombra dá à cheia; um cinza chapado leria como furo no
+   vidro. `vertical` e não o `none` do `.arcbar-glass-menu`: lá a área é o
+   menu inteiro e a variação vira mancha de um lado, aqui são 58px.
+
+   Tons opacos em vez de preto com alfa, pelo motivo da regra acima: um
+   gradiente translúcido daria uma sombra translúcida na mesma proporção, e a
+   capa vazia ficaria plana ao lado da cheia. #e9e9e9 e #d5d5d5 são justamente
+   o que 5% e 13% de preto rendem sobre o cinza deste menu. */
+.arcbar-media-cover-empty {
+  background-gradient-direction: vertical;
+  background-gradient-start: #e9e9e9;
+  background-gradient-end: #d5d5d5;
+  /* Glifo da nota: presente o bastante para dizer "é uma capa", apagado o
+     bastante para não disputar a leitura com o título ao lado. */
+  color: rgba(36, 36, 36, 0.62);
+}
+
+/* Selo do app no canto da capa. O que ele precisa vencer é a arte embaixo:
+   sobre uma capa clara um ícone de 16px sem anel simplesmente some. O anel é
+   da cor do vidro do menu (`rgba(245, 245, 245, 0.92)`, o tom de
+   `.arcbar-glass-menu`), para ler como um recorte do próprio menu sobre a
+   arte e não como moldura branca de figurinha.
+
+   `width`/`height` no St são a caixa de CONTEÚDO — a borda entra por fora —,
+   então 16px aqui é exatamente o ícone que o JS cria, e o selo mede 20px com
+   os 2px de anel de cada lado. A sombra fraca vem de `.arc-e1` do common.css
+   ("pastilha assentada sobre a arte que ela marca", que é este selo à letra),
+   carimbado pelo JS; nada de box-shadow próprio. */
+.arcbar-media-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(245, 245, 245, 0.92);
+  background-color: rgba(245, 245, 245, 0.92);
+}
+
+.arcbar-media-text {
+  /* Duas linhas, não mais três: sem o nome do app, 1px colava o título no
+     artista e o par lia como uma frase quebrada. */
+  spacing: 2px;
+}
+
+.arcbar-media-title {
+  color: #242424 !important;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.arcbar-media-artists {
+  color: rgba(36, 36, 36, 0.68);
+  font-size: 11px;
+}
+
+.arcbar-media-controls {
+  /* Os mesmos 8px que separam dois realces na barra (ver "Hit targets" no
+     CLAUDE.md). A 3px os três glifos se liam como um borrão só e o play/pause
+     perdia o papel de centro. */
+  spacing: 8px;
+}
+
+/* Três glifos soltos sobre o vidro: aqui o botão é a tinta, não um chip.
+   O play/pause se distingue por tamanho (20px contra 16px, ambos do JS) e por
+   tinta cheia — o círculo preenchido que ele tinha era a moldura que o cartão
+   acabou de perder, reaparecendo um nível abaixo. */
+.arcbar-media-control {
+  color: rgba(36, 36, 36, 0.78);
+  /* O alvo do clique precisa ser maior que o glifo: o padding dá os 28px
+     (16 + 6 + 6) sem desenhar nada. */
+  padding: 6px;
+  border-radius: 8px;
+  background-color: transparent;
+  transition-duration: 130ms;
+}
+
+/* Sob o ponteiro muda a TINTA e só ela: qualquer fundo aqui traz a pílula de
+   volta. */
+.arcbar-media-control:hover,
+.arcbar-media-control:focus {
+  color: #242424;
+  background-color: transparent;
+}
+
+/* O clique é a exceção — a tinta já está no máximo desde o hover, e sem
+   nenhuma resposta o botão parece não ter recebido o clique. Véu bem fraco,
+   e o raio de 8px o mantém quadrado arredondado, não pílula. */
+.arcbar-media-control:active {
+  color: #242424;
+  background-color: rgba(0, 0, 0, 0.10);
+}
+
+/* Apagar é `color` com alfa baixo, nunca `opacity`: o St analisa `opacity` e
+   não faz nada com ela (ver o cabeçalho do common.css). */
+.arcbar-media-control:insensitive {
+  color: rgba(36, 36, 36, 0.28);
+  background-color: transparent;
+}
+
+/* Tinta cheia em repouso: é o botão que o usuário procura primeiro.
+
+   O padding cai de 6px para 4px justamente para o botão do meio NÃO crescer:
+   o glifo dele tem 20px contra os 16px dos vizinhos (do JS), e com o mesmo
+   respiro a caixa sairia 32px contra 28px — o véu do hover viraria um chip
+   maior que os outros dois, que é a distinção por forma que este cartão
+   acabou de tirar. Os três realces medem 28px; o que muda entre eles é o
+   desenho dentro e a tinta. */
+.arcbar-media-play-pause {
+  color: #242424;
+  padding: 4px;
+  background-color: transparent;
+}
+
+/* O único que não pode responder ao ponteiro com a tinta, porque a dele já é
+   a cheia. Daí o véu que os laterais não têm — fraco a ponto de ser quase só
+   a confirmação de que o ponteiro chegou. */
+.arcbar-media-play-pause:hover,
+.arcbar-media-play-pause:focus {
+  background-color: rgba(0, 0, 0, 0.07);
 }
 
 .arcbar-notification-row {

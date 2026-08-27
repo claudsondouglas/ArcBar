@@ -56,8 +56,8 @@ class ArcBarPowerButton extends PanelMenu.Button {
         const avatarPath = `/var/lib/AccountsService/icons/${username}`;
         const avatarFile = Gio.File.new_for_path(avatarPath);
         const avatar = avatarFile.query_exists(null)
-            ? new St.Icon({ gicon: new Gio.FileIcon({ file: avatarFile }), style_class: 'arcbar-power-avatar' })
-            : new St.Icon({ icon_name: 'avatar-default-symbolic', style_class: 'arcbar-power-avatar' });
+            ? new St.Icon({ gicon: new Gio.FileIcon({ file: avatarFile }), icon_size: 42, style_class: 'arcbar-power-avatar' })
+            : new St.Icon({ icon_name: 'avatar-default-symbolic', icon_size: 42, style_class: 'arcbar-power-avatar' });
 
         const labels = new St.BoxLayout({
             vertical: true,

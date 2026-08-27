@@ -19,11 +19,11 @@ janelas.
 | Canto | Widgets, da esquerda para a direita |
 |---|---|
 | **esquerda** | CPU e memória, armazenamento, apps em segundo plano |
-| **centro** | notificações |
+| **centro** | notificações e player de mídia |
 | **direita** | relógio, rede, Bluetooth, som, energia |
 
 A ordem vem do índice de inserção no `extension.js`, não do CSS. Quatro widgets somem da barra
-quando não têm o que dizer: o de notificações sem nada pendente, o de apps em segundo plano sem
+quando não têm o que dizer: o da central sem notificação ou player, o de apps em segundo plano sem
 nenhum app escondido, o de Bluetooth sem adaptador e o de som sem saída de áudio. Como uma box
 pula o filho invisível junto com o espaçamento que viria com ele, não sobra buraco no lugar.
 
@@ -81,15 +81,16 @@ abriu.
 Um daemon de sessão também tem escopo, mas não vira ícone: o `.desktop` dele é `NoDisplay`, e
 ninguém "deixou ele aberto".
 
-## Notificações
+## Notificações e mídia
 
-No centro da barra, os ícones dos apps que têm notificação pendente (até três) ao lado do
-total. Clicar abre um menu de vidro com o título "Notificações", o botão "Limpar tudo" e uma
-lista rolável com uma linha por notificação: ícone do app, título, corpo, hora e um `x`.
+No centro da barra, os ícones dos apps que têm notificação pendente ou um player MPRIS ativo
+(até três) aparecem ao lado do total. Clicar abre um menu de vidro com o player no topo e uma
+lista rolável de notificações. O cartão de mídia mostra capa, app, faixa, artista e os controles
+anterior, reproduzir/pausar e próxima; clicar fora dos controles traz o app para a frente.
 
 - clicar na linha ativa a notificação (abre o app) e a dispensa;
 - o `x` da direita dispensa sem abrir nada;
-- "Limpar tudo" dispensa todas de uma vez.
+- "Limpar tudo" dispensa todas de uma vez, sem parar nem fechar o player.
 
 A lista **é** a bandeja do shell, não uma cópia dela: dispensar aqui é o mesmo
 `Notification.destroy(DISMISSED)` que o `x` do banner chama, então a notificação sai da barra,
@@ -101,8 +102,8 @@ mandou junto com a notificação: essa costuma ser o PNG embutido nele, e seria 
 fora do tema numa tela inteira de ícones temáticos. Quando não há app instalado que responda
 pela notificação, a última tentativa é um nome que o tema tenha, e só então a imagem crua.
 
-Sem nada pendente o botão inteiro sai da barra, e o menu fecha junto: dispensar a última linha
-sumiria com o botão embaixo de um menu ainda aberto.
+Sem notificação nem player o botão inteiro sai da barra, e o menu fecha junto. Enquanto houver
+mídia disponível, dispensar a última notificação deixa o cartão e o indicador no lugar.
 
 ## Relógio
 

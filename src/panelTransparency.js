@@ -35,6 +35,7 @@ export class PanelTransparency {
         this._windowSignals = new Map();
         this._screenshot = new Shell.Screenshot();
         this._originalPanelStyle = null;
+        this._panelColor = FALLBACK_COLOR;
         this._colorRequest = 0;
         this._sampleTimeoutId = 0;
     }
@@ -82,6 +83,7 @@ export class PanelTransparency {
         this._originalPanelStyle = null;
         this._screenshot = null;
         this._settings = null;
+        this._panelColor = null;
         Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
         Main.panel.remove_style_class_name(TRANSPARENT_CLASS);
     }
@@ -122,30 +124,39 @@ export class PanelTransparency {
         } else {
             Main.panel.remove_style_class_name(TRANSPARENT_CLASS);
             if (this._settings.get_boolean('adaptive-panel-color')) {
-                const appId = this._focusedAppId();
+                const window = this._focusedWindowOnPanelMonitor();
+                if (!window) {
+                    // Focus on another monitor must not influence the only
+                    // monitor that owns this panel. Restore the last opaque
+                    // colour in case the panel was transparent meanwhile.
+                    this._cancelColorSample();
+                    this._colorRequest++;
+                    this._applyPanelColor(this._panelColor);
+                    return;
+                }
+
+                const appId = this._appIdForWindow(window);
                 const savedColor = appId ? this._savedColorForApp(appId) : null;
                 if (savedColor) {
                     this._cancelColorSample();
                     this._colorRequest++;
                     this._applyPanelColor(savedColor);
                 } else {
-                    Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
-                    Main.panel.set_style(`background-color: ${FALLBACK_COLOR};`);
-                    this._scheduleColorSample(appId);
+                    this._applyPanelColor(FALLBACK_COLOR);
+                    this._scheduleColorSample(window, appId);
                 }
             } else {
                 this._cancelColorSample();
                 this._colorRequest++;
-                Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
-                Main.panel.set_style(`background-color: ${FALLBACK_COLOR};`);
+                this._applyPanelColor(FALLBACK_COLOR);
             }
         }
     }
 
-    _scheduleColorSample(appId) {
+    _scheduleColorSample(window, appId) {
         this._cancelColorSample();
         const request = ++this._colorRequest;
-        this._collectColorSamples(request, appId, []);
+        this._collectColorSamples(request, window, appId, []);
     }
 
     _cancelColorSample() {
@@ -156,13 +167,15 @@ export class PanelTransparency {
         this._sampleTimeoutId = 0;
     }
 
-    async _collectColorSamples(request, appId, samples) {
+    async _collectColorSamples(request, window, appId, samples) {
         const screenshot = this._screenshot;
         if (!screenshot || request !== this._colorRequest)
             return;
 
-        const window = global.display.focus_window;
-        if (!window || !window.showing_on_its_workspace() || window.minimized)
+        // Keep every sample tied to the same focused window on the panel's
+        // monitor. Focus and monitor changes invalidate the request in _sync(),
+        // while this check also closes the gap before its signal is handled.
+        if (window !== this._focusedWindowOnPanelMonitor())
             return;
 
         const rect = window.get_frame_rect();
@@ -187,7 +200,7 @@ export class PanelTransparency {
                 this._sampleTimeoutId = GLib.timeout_add(
                     GLib.PRIORITY_DEFAULT, SAMPLE_DELAY_MS, () => {
                         this._sampleTimeoutId = 0;
-                        this._collectColorSamples(request, appId, samples);
+                        this._collectColorSamples(request, window, appId, samples);
                         return GLib.SOURCE_REMOVE;
                     });
                 return;
@@ -225,15 +238,22 @@ export class PanelTransparency {
         else
             Main.panel.remove_style_class_name(LIGHT_BACKGROUND_CLASS);
 
+        this._panelColor = hex;
         Main.panel.set_style(
             `background-color: ${hex};`);
     }
 
-    _focusedAppId() {
+    _focusedWindowOnPanelMonitor() {
         const window = global.display.focus_window;
-        if (!window)
+        if (!window || !window.showing_on_its_workspace() || window.minimized)
+            return null;
+        if (window.get_monitor() !== Main.layoutManager.primaryIndex)
             return null;
 
+        return window;
+    }
+
+    _appIdForWindow(window) {
         return Shell.WindowTracker.get_default().get_window_app(window)?.get_id() ??
             window.get_gtk_application_id?.() ?? window.get_wm_class?.() ?? null;
     }

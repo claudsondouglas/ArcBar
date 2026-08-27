@@ -40,6 +40,9 @@ src/
 ├── appIcon.js           — createSourceIcon(): the source's app icon, from the icon theme.
 ├── notificationRow.js   — ArcBarNotificationRow: one list row (icon, title, body, time, x).
 ├── notificationButton.js— ArcBarNotificationButton: centre PanelMenu.Button + the list menu.
+├── media.js             — MediaModel: discovers MPRIS names on the session bus.
+├── mprisPlayer.js       — MediaPlayer: metadata, capabilities and MPRIS actions.
+├── mediaPlayer.js       — ArcBarMediaPlayer: cover, track text and playback controls.
 ├── network.js           — NetworkModel: NetworkManager's wired state → an icon name.
 ├── networkButton.js     — ArcBarNetworkButton: right PanelMenu.Button, menuless; opens Settings.
 ├── volume.js            — VolumeModel: the shell's Gvc mixer; output + one stream per app.
@@ -78,8 +81,9 @@ animations run, so both ends share one handler.
 ### Notifications
 
 The centre of the bar is `ArcBarNotificationButton`: the icons of the apps that have something
-pending (three at most) next to the total, and a menu with one row per notification. With nothing
-pending the whole button leaves the bar — the hidden actor is `container`, the one the panel
+pending or expose a playable MPRIS endpoint (three at most) next to the total, and a menu with
+media cards followed by one row per notification. With neither kind of item the whole button
+leaves the bar — the hidden actor is `container`, the one the panel
 allocates, so an invisible button does not keep holding its slot in the middle; and the menu is
 closed along with it, since dismissing the last row would otherwise pull the button out from under
 an open menu.
@@ -124,6 +128,56 @@ notified, which a generic glyph would not.
 Opening the menu also marks everything `acknowledged`, which is the flag the shell reads to decide
 whether a banner is still owed — without it the same notification would pop up again after being
 read here.
+
+Music is not in `Main.messageTray`; GNOME's date menu discovers it separately through MPRIS. The
+ArcBar mirrors that split: `MediaModel` watches `org.freedesktop.DBus.NameOwnerChanged`, while each
+`MediaPlayer` reads the root and player interfaces for app identity, metadata and capabilities.
+Only endpoints with `CanPlay` enter the centre. The currently playing endpoint sorts first, its
+app icon gets first claim on the three indicator slots, and its card exposes previous,
+play/pause and next. Clicking the rest of the card activates the `.desktop` app when possible,
+falling back to MPRIS `Raise`; "Limpar tudo" never touches media.
+
+The card is shaped after macOS' Now Playing, which mostly means taking things away. It paints no
+fill and no frame of its own — a bordered box inside a glass menu is a box inside a box, and the
+material is already the surface; the fill only appears under the pointer, over a 1px transparent
+border that reserves the highlight's own thickness (the same trick `.arcbar-notification-row`
+uses, and for the same reason: without it the box would shift 1px per side on hover). The app's
+name is not a third line of text. Three lines at 10/13/11px inside a 58px row was the crowded
+part, and an app name *above* the track title is inverted hierarchy — the title is the subject. It
+became a badge on the cover's bottom-right corner instead, which is where iOS and macOS put it. No
+resolved `.desktop`, no badge: a generic glyph in that corner would say nothing and cover part of
+the artwork. Nothing is lost to a screen reader, since `accessible_name` still spells the app out.
+Play/pause dominates by **size** (20px against the neighbours' 16px) rather than by a filled disc;
+all three hit boxes stay 28px, so what separates the middle one is the glyph and the ink, not one
+more shape. Hover moves the ink, never the fill.
+
+Three things there are counter-intuitive enough to be worth the paragraph.
+
+The artwork is painted as the bin's `background-image`, through `set_style()`, and not as a child
+`St.Icon`. St's `border-radius` clips only what the node paints **itself**, so a child icon covering
+the bin keeps its square corners over a rounded background — the radius survives as four visible
+slivers of the fill. Moving the radius onto the icon node does not help either: that is what the
+shell's own `.media-message .message-icon { border-radius: 8px !important }` does, and GNOME's own
+album art is square-cornered for exactly this reason; the rule only rounds the *background* of the
+themed-icon variant. `background-size: cover` goes with it, or art that is not square comes out
+stretched instead of cropped. The URI is round-tripped through `Gio.File` before it reaches the
+style string: it comes back escaped, which is what stops a quote arriving over the bus from closing
+the `url("…")` and appending CSS of its own. Because a re-applied `set_style()` makes St re-parse
+the node and reload the texture, the applied URI is cached and only written when it changes.
+
+`Clutter.ActorAlign.END` on its own moves nothing inside a `Clutter.BinLayout`. The child has to
+`expand` first — align decides where to sit in the space `expand` claimed, so with no expand there
+is no space and the badge lands dead centre on the cover. The group itself gets `x_expand: false`
+so that the badge's expand does not travel up and stretch the row.
+
+Both shadows come from the ArcSuite elevation ladder in `common.css` — `arc-e2` for the cover ("a
+card resting on the glass"), `arc-e1` for the badge ("a pip seated on the art it marks") — stamped
+as style classes next to the component's own, which is how that file says to use it: St has no
+variables, so the classes *are* the tokens. This is the first place in ArcBar to consume the
+ladder. It is also not merely stylistic: the generated `stylesheet.css` is `common.css ++
+local.css` at equal specificity, so a local `box-shadow` would silently win and quietly take the
+element off the ladder. The size of the cover lives only in the CSS for the same reason — a
+measurement with two homes is a measurement that will drift.
 
 ### CPU and memory
 

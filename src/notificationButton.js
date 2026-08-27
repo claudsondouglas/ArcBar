@@ -9,17 +9,18 @@ import { NotificationsModel } from './notifications.js';
 import { ArcBarNotificationRow, FALLBACK_ICON } from './notificationRow.js';
 import { createSourceIcon } from './appIcon.js';
 import { applyGlassMenu } from './glassMenu.js';
+import { MediaModel } from './media.js';
+import { ArcBarMediaPlayer, createPlayerIcon } from './mediaPlayer.js';
 
 // Quantos ícones de app cabem na barra antes de a fileira virar sopa de
-// letrinhas. O número ao lado continua sendo o total, então nada some da
-// contagem quando o quarto app notifica.
+// letrinhas. O número ao lado continua sendo o total de itens (notificações
+// + players), então nada some da contagem quando o quarto app entra.
 const MAX_INDICATOR_ICONS = 3;
 const INDICATOR_ICON_SIZE = 16;
 
 /**
- * O indicador de notificações do meio da barra: os ícones dos apps que
- * notificaram, o total ao lado, e um menu de vidro com uma linha por
- * notificação.
+ * A central do meio da barra: ícones dos apps com notificações ou mídia,
+ * o total ao lado, e um menu de vidro com players e notificações.
  */
 export const ArcBarNotificationButton = GObject.registerClass(
 class ArcBarNotificationButton extends PanelMenu.Button {
@@ -37,6 +38,8 @@ class ArcBarNotificationButton extends PanelMenu.Button {
         this._updateId = 0;
         this._model = new NotificationsModel(() => this._queueUpdate());
         this._model.enable();
+        this._mediaModel = new MediaModel(() => this._queueUpdate());
+        this._mediaModel.enable();
 
         this.menu.connect('open-state-changed', (_menu, isOpen) => {
             if (!isOpen)
@@ -145,12 +148,23 @@ class ArcBarNotificationButton extends PanelMenu.Button {
     }
 
     _update() {
-        const count = this._model.count;
+        const players = this._mediaModel.getPlayers();
+        const count = this._model.count + players.length;
 
         this._icons.destroy_all_children();
+        // Mídia vem primeiro: mesmo com muitas notificações, o ícone que diz
+        // que há um player dentro desta central não pode ficar escondido pelo
+        // limite visual de três apps.
+        for (const player of players.slice(0, MAX_INDICATOR_ICONS)) {
+            this._icons.add_child(createPlayerIcon(
+                player, INDICATOR_ICON_SIZE,
+                'arcbar-notification-app-icon'));
+        }
+
         // Mesmo ícone da linha do menu, pelo mesmo caminho (src/appIcon.js):
         // os dois mostram o mesmo app e não poderiam mostrá-lo de dois jeitos.
-        for (const source of this._model.getActiveSources().slice(0, MAX_INDICATOR_ICONS)) {
+        const availableIconSlots = MAX_INDICATOR_ICONS - this._icons.get_n_children();
+        for (const source of this._model.getActiveSources().slice(0, availableIconSlots)) {
             this._icons.add_child(createSourceIcon(
                 source, INDICATOR_ICON_SIZE,
                 'arcbar-notification-app-icon', FALLBACK_ICON));
@@ -158,8 +172,8 @@ class ArcBarNotificationButton extends PanelMenu.Button {
 
         this._count.text = `${count}`;
 
-        // Sem notificação nenhuma o botão inteiro sai da barra: o que sobraria
-        // é um espaço clicável para uma lista vazia. Quem esconde é o
+        // Sem notificação nem mídia o botão inteiro sai da barra: o que
+        // sobraria é um espaço clicável para uma lista vazia. Quem esconde é o
         // `container` e não o botão — é ele que o painel aloca, e um botão
         // invisível dentro de um container visível continuaria ocupando o
         // lugar dele no meio da barra. O menu é fechado junto: dispensar a
@@ -175,6 +189,13 @@ class ArcBarNotificationButton extends PanelMenu.Button {
     _rebuildList() {
         this._list.destroy_all_children();
 
+        const players = this._mediaModel.getPlayers();
+        for (const player of players) {
+            this._list.add_child(new ArcBarMediaPlayer(player, {
+                onActivate: p => this._activatePlayer(p),
+            }));
+        }
+
         const notifications = this._model.getNotifications();
         for (const notification of notifications) {
             this._list.add_child(new ArcBarNotificationRow(notification, {
@@ -183,9 +204,15 @@ class ArcBarNotificationButton extends PanelMenu.Button {
             }));
         }
 
-        this._scroll.visible = notifications.length > 0;
-        this._emptyLabel.visible = notifications.length === 0;
+        const hasItems = notifications.length > 0 || players.length > 0;
+        this._scroll.visible = hasItems;
+        this._emptyLabel.visible = !hasItems;
         this._clearButton.visible = notifications.length > 0;
+    }
+
+    _activatePlayer(player) {
+        this.menu.close();
+        player.raise();
     }
 
     _activate(notification) {
@@ -203,5 +230,7 @@ class ArcBarNotificationButton extends PanelMenu.Button {
 
         this._model?.destroy();
         this._model = null;
+        this._mediaModel?.destroy();
+        this._mediaModel = null;
     }
 });
